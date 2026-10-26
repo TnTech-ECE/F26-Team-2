@@ -2,12 +2,16 @@
 ## Introduction
 Across the globe,  electrical power is supplied from source to recipient via power lines. These lines carry single and three phase power while often carrying telecommunication signals below on a separate section. If these power lines fail, it can result in loss of magnitude of power (brownout) or loss of power altogether (blackout). This can happen from a transformer blowing up, power lines grounding through trees, or power lines falling either into other lines or onto the ground. Any instance which results in unprompted behavior is called a fault. Currently, the main method in locating a fault is by mobilizing service workers and garnering information from customer calls \[1\]. This, as one can imagine, is quite costly both monetarily and temporally.
 
-In light of this challenge, **Seal Team 2** shall develop an affordable, replicable prototype sensor which will relay information pertaining to the induced telluric currents. This information shall be sent across cell lines to the company supplying and managing the area's power. Such information will be primarily contained to fault detection for the scope of this prototype. This sensor will take information on the voltage and telluric current density surrounding the power pole, filter the data so that only the $60$, $180$, and $540$ Hz harmonics are considered, then process the data and signal a fault if necessary. This prototype will include electrodes, an analog filter, a PID controller, and a cellular communicator.
+In light of this challenge, **Seal Team 2** shall develop an affordable, replicable prototype sensor which will relay information pertaining to the induced telluric currents. This information shall be transmitted wirelessly to the company supplying and managing the area's power. Such information will be primarily contained to fault detection for the scope of this prototype. This sensor will take information on the voltage and telluric current density surrounding the power pole, filter the data so that only the $60$, $180$, and $540$ Hz harmonics are considered, then process the data and signal a fault if necessary. This prototype will include electrodes, an MCU unit, a telcommunication module, and a local power unit. The entire system will be designed to operate effectively outdoors in all outdoor conditions at the site, as per the customers specifications (*See Specifications and Constraints).
 
-This proposal will overview the existing and forming solutions to power line fault detection. Addressing first the theory and research guiding modern solution to this problem will grant clarity to the necessity ofthe project, the challenges anticipated, and  specifications of the prototype. Furthermore, this proposal will outline the measures of success, identify resources available (both in physical quantity and in knowledge), and formulate implications (both specific and general) of the completion of the project.
+### Scope
+
+In this proposal, **Seal Team 2** will provide a comprehensive view of the problem and solution strategy for the design the Telluric Current Sensor. The Formulating the Problem section shall fence in the design aspects by clarifying who the stakeholders are, providing a background of relevant theory to the design, enumerating the specifications and constraints imposed on the design by the stakeholders and governing bodies, and finally declaring a fully formulated problem statement for the design of the Telluric Current Sensor. The document shall then provide a survey of existing solutions for current fault indication techniques. The document will then define and clarify **Seal Team 2's** measures of success by explaining the experiments and methodologies that will be used to meet the systems specifications and constraints. The resources section will propose an estimated budget for the system, provide a division of labor for the members of **Seal Team 2**, and provide a detailed timeline for the design of the sensor. The document will conclude by enumerating the specific and broader implications for the design of the Telluric Current Sensor.
 
 ## Formulating the Problem
+
 ### Background
+#### Telluric Current Theory
 Almost all current methods in distributing power involve transformers and power lines. The smallest of such power lines will hold two lines (a phase and a neutral) or four lines (3 phases and a neutral). Both examples are subsets of three phase power distribution lines which rely primarily on the balancing of all three phases. If power lines fall either by heavy winds, falling trees, or the pole itself falling, two major faults can occur: line-to-line faults or line-to-ground faults. Line-to-line (LL) faults cause an imbalance in the three phases by shorting two of them together. Line-to-ground (LG) faults cause an imbalance by grounding one of the phases. Other specific kinds of faults can be three line (LLL) faults two lines to ground (LLG) and others, but all of these fall in either category of LL or LG or both and will henceforth be referred to by their respective category.
 
 First, consider the LL fault. This occurs when two or three phases have been faulted together. For ease of thought, a fault of lines A and B will be considered. Suppose a line A is faulted in a way which connects it to line B. This will result in the path: Source$\rightarrow$Transformer Winding A$\rightarrow$A$\rightarrow$B$\rightarrow$Transformer Winding B$\rightarrow$Source. Where the path through B and B's transformer winding is traveling in the reverse direction. This causes the line voltage $V_{AB}$ to be very small near the fault but remain very large at the transformer. Such a voltage difference, with the low impedance of wire, will result in immense current surges. Say lines A and B are components of a $480\,\text{V}$ 3-phase power system (US Standard) and an LL fault of lines A and B occurs. $V_{AB}$ nearest the transformer will be $\approx480\,\text{V}$ while near the fault almost $0$. If the combined impedance of the fault and power lines is $0.05\,\text{m}\Omega$, then the resulting current would be $\frac{480}{0.05}=9600\,\text{A}$. Such an amperage is far too high to be maintainable by a system which causes arcing, fires, mechanical torque, electromagnetic disruptions, etc.
@@ -24,53 +28,55 @@ telluric currents to spike, *especially in the case of LG faults*. LG faults, as
 
 Given that modern techniques are either invasive (through the use of component load monitoring), expensive (for a similar reason), or slow (by use of call-ins and field technicians searching for the fault), this method may provide a way to accurately pinpoint and relay information to whomever is heading the power distribution. For such a purpose, it would prove advantageous for this sensor to be able to transmit over long ranges and be self sufficient in power.
 
-Thus, the scope of this prototype is that it shall obtain reliable information on the current density and be able to synthesize such data
-into very small packets able to be communicated (via cellular or satellite) over vast distances. This prototype may also be capable of
-using the telluric currents to charge its system whilst it remains dormant so that maintenance is far less regular. In light of reducing
-the need for maintenance, the prototype shall also resist the changing weather conditions, especially heat and rain, to continue to serve
-accurate and reliable information throughout the seasons.
-
 #### Telecommunication Subsystem
 The following information provides a background of relevant telecommunication theory for the process of designing the Telluric Current Sensor. 
 
-In general, a communication system can be described by the elements shown in Figure T.1 (Figure of the Block diagram of a generic Telecomm system). The input message, $x(t)$ is the raw physical signal from which information is being extracted. In the case of Seal Team 2's Ground Fault Sensor, this will be the current flowing through the ground from the substation. $x(t)$ is then  processed by a tranducer, which will convert the physical signal into a electrical signal $x_2(t) that contains the desired information. The information is then propagated through some medium using some modulation technique along a carrier wave of the form: $Acos(\omega t + \phi)$. As the modulated wave propagates across the medium, noise is introduced which attenuates and distorts the signal. The receiver takes this noise distorted signal and demodulates it to restore the information from the input signal.
+In general, a communication system can be described by the following general process: Let $x(t)$ be the raw physical signal from which information is being extracted. In the case of Seal Team 2's Ground Fault Sensor, this will be the telluric currents from the substations. $x(t)$ is then processed by a tranducer, which will convert the physical signal into a digital signal $x_2(t)$ that contains the information from $x(t)$. The information is then propagated through a medium, typically air, using some modulation technique, along a carrier wave of the form: $Acos(\omega t + \phi)$. As the modulated wave propagates across the medium, noise is introduced which attenuates and distorts the signal. The receiver takes this noise distorted signal and demodulates it to restore the information from the input signal.
 
-When determining the communication system architecture to be used for a given system, the following parameters are worth considering.
+##### Modulation
 
-*Data rate* is the speed for which data tranfers from transmitter to receiver, measured in bits/s. 
+Modulation refers to the action of altering the properties of the carrier wave to efficiently carry the information ($x_2(t)$). Basic forms of modulation include AM (amplitude modulation) which varies the amplitude of the carrier signal according to $x_2(t)$ and FM (frequency modulation) which varies the frequency of the carrier signal due to $x_2(t)$. The type of modulation used in the system can minimize the effects of the noise through the medium. For digital modulation, the following techniques have been optimized for such minimization:
 
-*Symbol Rate / Baud Rate* is the number of symbols/characters transferred from transmitter to receiver. (Calculated as: $BaudRate = \frac{BitRate}{BitsPerSymbol}$)
+- ASK (Amplitude Shift Keying): Encodes data by changing the amplitude (strength) of a carrier wave while keeping its frequency constant.
 
-*Bandwidth*: Frequency range of the transmitted signal. 
+- FSK (Frequency Shift Keying): Encodes data by switching between different carrier frequencies.
 
-- Throughput: (*define)
+- PSK (Phase Shift Keying): Encodes data by changing the phase (timing position within a cycle) of a carrier wave.
 
-*Latency* is the time delay in milliseconds for data to travel from source to destination.
+- QPSK (Quadrature Phase Shift Keying): A type of PSK that uses four distinct phase states to encode 2 bits per symbol.
 
-- Channel Capacity (*define)
+- QAM (Quadrature Amplitude Modulation): Encodes data by varying both the amplitude and phase of a carrier wave, allowing multiple bits per symbol.
 
-- Noise and Interference (*define)
+- Chirp-Based Modulation: Encodes data using chirps—signals whose frequency continuously increases or decreases over time. It can offer robust communication in noisy environments and is used by technologies such as LoRa.
 
-- Signal to Noise Ratio (*define)
+##### Relevant Metrics
 
-- Bit Error Rate (*define)
+When determining the communication system architecture to be used for the Telluric Current Sensor, the following parameters are worth considering.
 
-The type of modulation used in the system can minimize the effects of the noise through the medium. For digital modulation, the following techniques are relevant:
-- ASK (Amplitude Shift Keying)
-- FSK (Frequency Shift Keying)
-- PSK (Phase Shift Keying)
-- QPSK (Quadrature Phase Shift Keying)
-- QAM (Quadrature Amplitude Modulation)
-- Chirp-Based Modulation
+-*Speed Metrics*
+The following metrics are related to the speed of data transmission:
+*Data rate:* is the speed for which data transfers from transmitter to receiver, measured in bits/s. *Symbol Rate / Baud Rate* is the number of symbols/characters transferred from transmitter to receiver. (Calculated as: $BaudRate = \frac{BitRate}{BitsPerSymbol}$). *Latency* is the time delay in milliseconds for data to travel from source to destination.
 
-The above parameters and modulation schemes shall be considered when weighing the options for telecommunication architectures for the Seal Team 2's Ground Fault Sensor.
+-*Accessibility Metrics*
+The following metrics are related to a modems ability to transmit effectively:
+-*Bandwidth*: Frequency range of the transmitted signal. For cellular transmission, and more generally for public networks, data must be transmitted along specified bands. Thus, a modem that can operate over a large bandwidth is preferrable. *Throughput*: The amount of real output that is succesfully tranferred to the receiver.
+
+**Seal Team 2** shall use the above metrics and modulation techniques to determine the effectiveness of potential telecommunication hardware and connectivity options for the Telluric Current Sensor.
 
 #### Power Subsystem
 A field-ready telluric ground fault sensor needs a highly adaptable power architecture capable of operating in diverse environments ranging from remote, unassisted terrain to high-voltage substations. In either scenario, powering a sensitive micro board requires balancing continuous baseline consumption with high peak bursts, all while maintaining power quality to prevent electrical noise from interfering with the ground measurements. To address these design challenges, the power subsystem explores multiple flexible architectures ranging from off-grid renewable energy to direct power feeds, governed by strict electrical and safety standards [SS-1]-[SS-5].
 
+##### Power Subsytem Relevant Metrics
+- **SR-01 — Output Regulation:** The power distribution board shall provide regulated DC outputs of 3.3 V and 5 V with a voltage regulation tolerance of $\pm 2\%$ under all operating load steps.
+- **SR-02 — Power Quality and Ripple:** The power conditioning circuitry shall limit high-frequency switching ripple to less than 10 mV peak-to-peak to prevent noise contamination of the analog acquisition front-end [SS-7].
+- **SR-03 — Galvanic Isolation:** The power supply architecture shall maintain a reinforced isolation barrier rated for a minimum of 2 kV between external power inputs and internal instrument grounds [SS-3], [SS-21].
+- **SR-04 — Autonomous Operation:** The primary power architecture shall sustain continuous, unattended operation for a minimum of 24 hours under nominal field load profiles.
+- **SR-05 — Transient Response:** The regulation and post-regulation stages shall maintain voltage stability and limit transient sags to less than 5% during sudden microcontroller load steps.
+- **SR-06 — Regulatory Compliance:** All power subsystem component placement, wiring methods, and energy storage enclosures shall comply with applicable NEC Articles 250, 706, and 725 requirements [SS-1] along with NFPA 855 safety guidelines [SS-2].
+
 ##### Equations
 
-###### 1. Voltage Regulation and Drop Analysis (Supports SR-01)
+###### 1. Voltage Regulation and Drop Analysis 
 
 $$
 \%VR = \left(\frac{V_{\text{no-load}} - V_{\text{full-load}}}{V_{\text{full-load}}}\right) \times 100
@@ -80,7 +86,7 @@ Where:
 - $V_{\text{no-load}}$ is the output voltage at zero load current.
 - $V_{\text{full-load}}$ is the output voltage under maximum active load.
 
-###### 2. Supercapacitor Transient Energy and Voltage Sag Mitigation (Supports SR-05)
+###### 2. Supercapacitor Transient Energy and Voltage Sag Mitigation 
 
 $$
 E = \frac{1}{2}C\left(V_{\text{initial}}^2 - V_{\text{min}}^2\right)
@@ -98,7 +104,7 @@ Where:
 - $\Delta t$ is pulse duration (s).
 - $R_{\text{ESR}}$ is equivalent series resistance ($\Omega$).
 
-###### 3. Battery State of Charge and Autonomous Runtime (Supports SR-04)
+###### 3. Battery State of Charge and Autonomous Runtime 
 
 $$
 T_{\text{runtime}} = \frac{C_{\text{batt}} \cdot \text{DoD} \cdot \eta_{\text{sys}}}{I_{\text{avg}}}
@@ -110,7 +116,7 @@ Where:
 - $\eta_{\text{sys}}$ is power conversion efficiency (0.85).
 - $I_{\text{avg}}$ is average continuous current (A).
 
-###### 4. Switching Regulator Output Ripple Voltage (Supports SR-02)
+###### 4. Switching Regulator Output Ripple Voltage
 
 $$
 V_{\text{ripple}} = \frac{V_{\text{out}} \cdot (1-D)}{8 \cdot L \cdot C_{\text{out}} \cdot f_{\text{sw}}^2}
@@ -171,7 +177,6 @@ Where:
 - $T_A$ is ambient temperature inside the enclosure (°C).
 - $\theta_{JA}$ is the IC package's junction-to-ambient thermal resistance (°C/W).
 
-
 #### Physical Subsystem
 Many environmental issues must be considered when designing any project, but with this sensor, the surrounding conditions need to be studied and analyzed even more carefully. Since this system is going to be deployed in Cookeville, Tennessee, it will be exposed to rainfall, soil moisture, drastic temperature changes, humidity, and potentially other hazardous weather conditions. Any of these conditions could affect the performance of the system and, in some cases, make it inoperable.
 
@@ -181,52 +186,43 @@ Additionally, environmental temperature must also be accounted for because chang
 
 ### Specifications and Constraints
 
-#### Specifications
-
+#### Stakeholders
 In essence, the potential stakeholders for this project other than our customer, Dr. Charles Van Neste, would be groups that deal with managing fault currents, such as utility companies. In particular, a system that can detect faults in this manner would be beneficial for rural utility companies that have to send out fleets of people to search for a fault when it occurs. Since rural utility companies, also known as utility cooperatives, serve multiple counties, a telluric current sensor with fault monitoring would be beneficial since remote areas bring along greater difficulty to locating faults when they occur. Groups that would be invested in this sensor would want a sensor that can detect a fault current using non-invasive techniques, that can transmit the information of the system to a device owned by the stakeholders, and -if possible- having a triangulation system in place to locate the fault in a power system.
 
-##### Telecommunication Subsystems Specifications:
+#### Specifications
 
-*Maximized data rate:* Minimum data rate threshold shall be determined on a future date.
+The following section will enumerate and clarify the specifications provided by the customer, Dr. Van Neste, on behalf of all of the stakeholders (See Stakeholders subsection)
 
-*Maximized Signal-To-Noise ratio:* According to the CASRAI document, *Limit of Detection vs Limit of Quantitation: How to Calculate LOD and LOQ**, the generally accepted minimum signal-to-noise ratio for quantitation of data is 10:1 \[2\]. This shall be *Seal Team 2's* choice for the minimum.
-
-*Minimized transmission power consumption (including resting power consumption):* Maximum power consumption threshold shall be determined by the constraints of the power subsystem.
-
-*Minimized Latency:* Maximum latency threshold shall be ~1s.
-
-##### Microcontroller Specifications
-When a line-to-line fault or a line-to-ground fault is detected by the sensor, a microcontroller shall wirelessly transmit this information to a device. The size of the data transmitted is dependent on the final level of the complexity of the system. At its base form, it is required to indicate when a fault is detected in a transmission line. Ideally, a triage system would be implemented for locating where a fault occurs in the system. The microcontroller shall be able to communicate with the sensors to interpret the data and determine when a fault occurs. If it is determined to convert the analog data to digital data, this may be done with using a Fast Fourier Transform algorithm on the microcontroller, which would increase the need for computational power on the microcontroller. The microcontroller shall also be optimized to consume the minimum amount of power needed to detect a fault. The amount of power consumption for the microcontroller is correlated with the computational demand on the device, so the amount of power that will be consumed with be dependent on the data processing. For conservation of power, a sleep mode may be established to reduce the power consumption of the device.
-
+##### Telecommunications Subsystem Specifications
+- **TCS-TS1** The customer, Dr. Charles Van Neste, specifies that the data must be transmitted wirelessly to a gateway accesible by any of the stakeholders that is at most 1 km away from the sensor.
+- **TCS-TS2** The customer, Dr. Charles Van Neste, specifies that the power consumption of the transmitter must be minimized. 
+- **TCS-TS3** The customer, Dr. Charles Van Neste, specifies that the entire communication module must be weatherized.
+##### MCU Subsystem Specifications
+- **TCS-MS1** The customer, Dr. Charles Van Neste, specifies that the Telluric Current Sensor may use the Particle Boron Microcontroller as the combined MCU and Telecommunication modules.
+- **TCS-MS2** The customer, Dr. Charles Van Neste, specifies that the MCU must use a Fast Fourier Transform algorithm to extract the 60 Hz, 180 Hz, and 540 Hz frequency amplitudes from the sampled telluric current input.
+- **TCS-MS3** The customer, Dr. Charles Van Neste, specifies that the MCU must detect abnormalities in the frequencies and determine if a fault has occured based on such data.
+##### Weatherization Subsystem Specifications
+- **TCS-WS1** The customer, Dr. Charles Van Neste, specifies that the entire system must be housed in a water proof and weather proof encasement.
+- **TCS-WS2** The customer, Dr. Charles Van Neste, specifies that all components must be capable of operating under all of Cookeville, TN temperature ranges ($-30 - 41^{\circ}$ C). 
+- **TCS-WS3** The customer, Dr. Charles Van Neste, specifies that the system must be able to operate under the extreme weather conditions in Cookeville: rain, snow, etc.
+##### DAQ Subsystem Specifications
+- **TCS-DS1** The customer, Dr. Charles Van Neste, specifies that the system must measure the voltage differences between two or more electrodes and input this data into the MCU via an ADC converter.
 ##### Power Subsystem Specifications
+- **TCS-PS1** The customer, Dr. Charles Van Neste, specifies that the system must be powered locallly and efficiently and require minimal maintenance. (Battery replacements >1 month).
+- **TCS-PS2** The customer, Dr. Charles Van Neste, specifies that the system must incorporate surge protection devices complying with IEEE Std C62.41 to withstand high-voltage transient overvoltages a lightning-induced surges.
+- **TCS-PS3** The customer, Dr. Charles Van Neste, specifies that the system may be charged via the telluric currents from the substation through the use of a supercapacitor bank, thereby requiring no charging element.
+##### PCB Specifications
+- **TCS-PCB1** The customer, Dr. Charles Van Neste, specifies that each of the subsystems may be connected via a printed circuit board to make the commercialization of this project more effective.
 
-- **SR-01 — Output Regulation:** The power distribution board shall provide regulated DC outputs of 3.3 V and 5 V with a voltage regulation tolerance of $\pm 2\%$ under all operating load steps.
-- **SR-02 — Power Quality and Ripple:** The power conditioning circuitry shall limit high-frequency switching ripple to less than 10 mV peak-to-peak to prevent noise contamination of the analog acquisition front-end [SS-7].
-- **SR-03 — Galvanic Isolation:** The power supply architecture shall maintain a reinforced isolation barrier rated for a minimum of 2 kV between external power inputs and internal instrument grounds [SS-3], [SS-21].
-- **SR-04 — Autonomous Operation:** The primary power architecture shall sustain continuous, unattended operation for a minimum of 24 hours under nominal field load profiles.
-- **SR-05 — Transient Response:** The regulation and post-regulation stages shall maintain voltage stability and limit transient sags to less than 5% during sudden microcontroller load steps.
-- **SR-06 — Regulatory Compliance:** All power subsystem component placement, wiring methods, and energy storage enclosures shall comply with applicable NEC Articles 250, 706, and 725 requirements [SS-1] along with NFPA 855 safety guidelines [SS-2].
-
-~~(Autonomous Operation): The primary off-grid power architecture (Solar/LiFePO₄/Supercapacitor or LiSOCl2LiSOCl2) shall sustain continuous, unattended operation for a minimum of 24 hours under nominal field load profiles[3].~~
-
-~~(Regulatory Compliance): All power subsystem component placement, wiring methods, and energy storage enclosures shall comply with applicable NEC Articles 250, 690, 706, and 725 requirements.~~
-
-~~(Surge & Transient Immunity): The power input stage shall incorporate surge protection devices complying with IEEE Std C62.41 to withstand high-voltage transient overvoltages and lightning-induced surges.~~
-
-~~(Harmonic Control): The power conversion and switching circuitry shall limit current and voltage harmonic distortion to maintain compliance with IEEE Std 519, preventing conducted noise from contaminating sensitive telluric frequency bands.~~
-
-~~(Grounding & Earth Potential): The system grounding and bonding architecture shall comply with IEEE Std 142 and support earth impedance verification per IEEE Std 81 to mitigate Ground Potential Rise (GPR) hazards in substation environments.~~
-
-~~(Environmental & Thermal Operating Limits): The power and energy storage subsystems shall maintain safe operating parameters across an ambient temperature range of $-40^\circ\text{C}$ to $+65^\circ\text{C}$, incorporating safeguards against cold-weather charging and thermal runaway per NFPA 855.~~
-
-~~(Portability): The complete power management and storage assembly shall be compact and lightweight enough to allow for single-person transport and deployment in remote terrain.~~
-
-##### Physical Subsystem Specifications
-- The system shall be encased in a weather-proofing system in attempt  to prevent excess moisture from entering the circuit.
-- The system shall be waterproof up to a NEMA standard protection rating.
-- Materials used in the enclosure shall be resistant to corrosion and degradation during outdoor exposure.
+##### Discussion
+Upon negotiation with Dr. Charles Van Neste and extensive review of the TCS-MS1 specification, **Seal Team 2** decided to void TCS-MS1 in lieu of better options for microcontroller units that will be outlined in the Conceptual Design Document. Furthermore, due to the complexity of the supercapacitor bank mentioned in **TCS-PS3**, **Seal Team 2** negotiated with the customer to void this requirement. All other specifications will be considered for the design of the Telluric Current Sensor.
 
 #### Constraints
+
+##### Data Acquisition Subsystem Constraints
+
+*Data acquisition electrode constraints:*
+Since testing will be performed near high-tension lines, there are important safety considerations to be investigated. For one, there is a chance of pertubing underground utilties. To avoid this, OSHA 29 CFR 1926.651(b) requires that the utility owner is contacted before any excavating occurs, and Tennessee’s Underground Utility Damage Prevention Act (TCA 65-31-101) requires everyone who digs to contact Tennessee 811 at least three (3) working days’ notice before starting a project [SG1], [SG2]. The testing location should also be verified on what is permitted within the right-of-way, as per TVA’s Transmission Right of Way team [SG3]. To also prevent electric shock or similar injuries during installation, it is recommended by OSHA 1910.333(c)(6) to minimize the hazard through implementation of work practice such as handling techniques and insulation [SG4]. Beause of this, personal protective equipment and proper insulation should be diligently inspected, with these ratings given by 29 CFR 1926.97 and OSHA 29 CFR 1926.957, respectively [SG5], [SG6].
 
 ##### Telecommunication Subsystem Constraints
 
@@ -269,15 +265,15 @@ IEC-61010-1 pertains to category ratings for safety requirements of equipment us
 
 ###### Legal Constraints
 
-- - **Regulatory and Safety Codes:** All internal wiring, power distribution, and grounding must strictly comply with NEC (NFPA 70) requirements, specifically Article 250 (Grounding and Bonding), Article 690 (Solar PV Systems), Article 706 (Energy Storage Systems), and Article 725 (Low-Voltage Control Circuits) [SS-1].
-- **Thermal and Chemical Limitations:** Battery charging and discharging parameters must respect chemical limits (preventing lithium or thermal runaway under NFPA 855 guidelines) [SS-2].
-- **Geographical and Site Restrictions:** Field deployment requires correct physical orientation and spacing of sensing probes relative to local telluric vectors to help with meaningful data collection.
+**Regulatory and Safety Codes:** All internal wiring, power distribution, and grounding must strictly comply with NEC (NFPA 70) requirements, specifically Article 250 (Grounding and Bonding), Article 690 (Solar PV Systems), Article 706 (Energy Storage Systems), and Article 725 (Low-Voltage Control Circuits) [SS-1].
+
+**Thermal and Chemical Limitations:** Battery charging and discharging parameters must respect chemical limits (preventing lithium or thermal runaway under NFPA 855 guidelines) [SS-2].
+
+ **Geographical and Site Restrictions:** Field deployment requires correct physical orientation and spacing of sensing probes relative to local telluric vectors to help with meaningful data collection.
 
 ###### Applicable Standards and Design Implementation
 
-To ensure safe operation, signal integrity, and regulatory compliance across environments ranging from field sites to high-voltage substations, the power subsystem incorporates design criteria from key engineering codes and standards.
-
-###### Standards Mapping and Verification Summary
+To ensure safe operation, signal integrity, and regulatory compliance across environments ranging from field sites to high-voltage substations, the power subsystem incorporates design criteria from the following key engineering codes and standards:
 
 | Standard / Code | Title / Focus Area | Applicable Subsystem / Aspect | Design Integration and Incorporation Strategy | Target Verification Metric |
 |---|---|---|---|---|
@@ -293,48 +289,11 @@ To ensure safe operation, signal integrity, and regulatory compliance across env
 | **IEEE Std C37.91** | Protective Relaying for Transformers | Substation Sensor Placement | Structural shielding and transient clamping to withstand transformer magnetic fields and fault currents. | Uninterrupted function during high EMF exposure |
 | **USB 2.0 / USB-C PD Spec** | USB Power & Delivery Standard | Primary Field Input (VBUS) | Standardized 5 V DC intake interface using commercial USB power banks and wall adapters. | Voltage stable within $4.75\text{V} - 5.25\text{V}$ under load |
 
-###### Detailed Incorporation Strategy by Standard 
+### Fully Formulated Problem Statement
 
-*1. NEC (NFPA 70) Compliance Strategy*
+**Seal Team 2** shall design a Telluric Current Sensor that obtains reliable current density information of the telluric currents emmitted from a substation while adhering to the **TCS-DS** specifications and DAQ subsystem constraints. The Sensor shall contain an MCU that captures the telluric current data digitally, extracts the 60 Hz, 180 Hz, and 540 Hz amplitudes from an FFT algorithm, determines the existence of a ground fault, and sends the data serially to a telecommunications module while adhering to the **TCS-MS** specifications and MCU subsystem constraints. The Sensor shall contain a telecommunications module to transmit the data across a distance of 1 km to a gateway accessible by all stakeholders while adhering to the **TCS-TS** specifications and telecommunication subsystem constraints. The Sensor shall be powered locally with minimal maintenance needs as per the **TCS-PS** specifications and power subsystem constraints. Finally, the sensor shall be housed in a waterproof and weatherproof encasement, and should be capable of operating in all outdoor conditions as per the **TCS-WS** specifications and Weatherization subsystem constraints.
 
-- **Article 250 — Grounding and Bonding:** All metal components and external shielding will be bonded to a single reference ground terminal. Grounding paths will be verified using a low-resistance ohmmeter to confirm bonding resistance stays under 0.1 Ω.
-- **Article 690 — Solar PV Systems:** For solar-connected deployments, PV input lines will include an inline Littelfuse waterproof fuse holder sized according to short-circuit current calculations to protect against DC wiring faults.
-- **Article 706 — Energy Storage Systems:** Battery and supercapacitor storage will be contained within fire-retardant enclosures. Overcurrent protection will be placed adjacent to the positive terminal of the cell pack.
-- **Article 725 — Low-Voltage Control Circuits:** Low-voltage DC traces (3.3 V and 5 V) on the power distribution board will be routed on dedicated internal layers with clearance distances greater than 6.3 mm, separating them from external high-voltage field connections.
-
-*2. NFPA 855 — Energy Storage System Safety*
-
-To comply with lithium-ion safety guidelines and prevent thermal runaway:
-
-- Primary energy storage utilizes a pre-certified, off-the-shelf commercial power bank with integrated hardware BMS protection for short circuits, overcharging, and deep discharge.
-- The sensor microcontroller tracks ambient enclosure temperature via an analog temperature sensor. Firmware will trip a power-disconnect flag if internal enclosure temperatures exceed 55 °C during charging or 60 °C during operation.
-
-*3. IEEE Substation Safety Standards (IEEE Std 80 and IEEE Std 4)*
-
-Ground Potential Rise (GPR) during utility faults can introduce thousands of volts between the remote ground stake and the sensor electronics.
-
-- **Implementation:** A RECOM/Murata isolated DC-DC converter module is placed directly after the USB intake to establish a certified 2 kV RMS reinforced galvanic barrier between external inputs and internal instrumentation grounds.
-- **Testing:** Compliance will be validated using a hipot tester, applying 2 kV RMS across input and output grounds for 60 seconds while verifying leakage current remains under 1 mA.
-
-*4. Power Quality and Noise Standards (IEEE Std 1100, IEEE Std 1547, and IEEE Std C37.91)*
-
-Sensitive telluric ground fault measurements occur in the microvolt range within a 0.01 Hz to 100 Hz frequency band.
-
-- **Implementation:** An ultra-low-noise LT3042 LDO regulator is cascaded downstream of the switching converter to provide high PSRR (>75 dB at 100 kHz).
-- **Testing:** High-frequency switching ripple will be measured using an oscilloscope with a 20 MHz bandwidth limit and a 1:1 probe, verifying that output ripple remains under 10 mV peak-to-peak and integrated noise stays below 10 μV RMS.
-
-*5. USB 2.0 / USB-C Power Delivery Specification*
-
-- **Implementation:** Standardized USB Type-C and Type-A input ports are integrated on the enclosure exterior, enabling field connection to portable battery packs or bench AC adapters.
-- **Testing:** Voltage stability will be measured across dynamic load transitions (0 mA to 500 mA) to ensure input voltage stays within the specified 4.75 V to 5.25 V operating window.
-
-
-##### Physical Design Subsystem Constraints
-
-- The weatherproofing solution shall not electrically isolate the sensing electrode from the soil.
-- The enclosure shall not introduce conductive materials near the sensing element that significantly interfere with telluric measurements.
-
-### Survey of Existing Solutions
+## Survey of Existing Solutions
 Fault Current Indicators are a vital part of electric power distribution. These devices serve a key role in ensuring that operations of a circuit are not violated so that power delivery and public safety are not compromised. There are numerous examples of these:
 
 1) Schweitzer Engineering Laboratories LINAM AR360 and LINAM AR \[18\]
@@ -352,245 +311,40 @@ Fault Current Indicators are a vital part of electric power distribution. These 
 
 However, these systems do not utilize telluric current readings for fault detection. With our device, the goal is to provide a non-invasive, modular, and portable solution to fault circuit indication. That is, the device shall be a contactless fault detection that utilizes telluric currents to monitor the characteristics of the circuit. 
 
-#### Survey of Existing Solutions for Telecommunications Subsystem
-
-For the Telecommunications design, there are five main architectures to compare:
-
-*WiFi-Based Design* WiFi is a reliable way to wirelessly transmit information locally. Effectiveness of this system depends significantly on the distance from the sensor to the Wifi router.
-- Pros: Fast data rate: ~(2 Mbps - 2.4 Gbps) as per the *IEEE 802.11 Wi-Fi protocol summary* \[21\].
-- Cons: The physical range for Wi-Fi communication is very small (~90 m at maximum \[22\]).
-
-*Cellular-Based Design:* Cellular typically requires choosing an already commercially available system, which can be potentially expensive depending on the choice. The options can be narrowed down in order of least power/data to most: NB-IoT, LTE-M, LTE/5G. 
-
-*LoRaWAN:* Low power method for transmitting data reliably. This option would require the implementation of RF infrastructure to transfer the data across a ~10-20 km distance. If the power company already has working infrastructure, this would be a powerful option.
-
-*Satellite:* Largest range but expensive.
-
-*Bluetooth:*
-
-#### Survey of Existing Solutions for Microcontroller Selection
-
-For the MCU choices, there are four main suppliers to be compared, in addition to the option of using a laptop for the data processing.
--   -   test
-Teensy Development Boards is one of the options considered for this project. It is a USB-based microcontroller development system that is compatible with Arduino Software & Libraries, compact, free software development tools, and can use either Arduino or C languages \[23\], \[24\].
-
-Raspberry Pi is also another manufacturer with the potential of offering an ideal product for us. While there are older models in end-of-phase, such as the Raspberry Pi 2 Model B, there are other Raspberry Pi devices that could supply more computationally powerful processes while providing more portability than a laptop. However, microcontrollers are offered by Raspberry Pi, such as the Raspberry Pi Pico 2 \[25\]. Like Teensy, Raspberry Pi is  compatible with C, but MicroPython and C++ are also compatible with Raspberry Pi \[26\].
-
-If greater computational power and language compatibilty is needed, a laptop could hypothetically be used. However, this option has major drawbacks in terms of power efficiency, portability, and size, this option would have significantly lower use cases to be implemented.
-
-While Particle MCUs are costly option, Particle serves as an option for the MCU because of a program the company includes: if under 100 MB of data is used per month, the buyer can use cellular and WiFi across up to 100 devices for free \[27\]. 
-
-The STM32 family of MCUs are the devices are the most familiar to this group since previous coursework involved writing to an STM32 microcontroller for labs and projects. The STM32 line also has wireless MCUs, and virtually all microcontrollers in the STM family meet the standards for the IEEE 495-2025 temperature ratings \[28\] \[29\].
-
-The ESP32 family of MCUs are an option with built-in WiFi and Bluetooth capabilities, and is also meets the temperature ratings per IEEE 495-2025 \[30\].
-
-#### Survey of Existing Solutions for Power Architecture 
-
-To provide maximum adaptability for different sites, the system design outlines multiple unique power configurations regarding tradeoffs of cost, weight, longevity, and transient handling [SS-6].
-
-##### 1. Standalone Photovoltaic Solar with Battery and Supercapacitor Bank
-
-**Architecture:** A rugged monocrystalline solar panel charges a hybrid storage system through an MPPT charge controller. The storage combines a battery for off-grid energy storage with a parallel supercapacitor bank that absorbs high-frequency power transients, load steps, and voltage spikes.
-
-**Pros:**
-- Long-term energy storage and capacity.
-- Handles a wide range of climate conditions.
-- Complete galvanic isolation from substation and grid potentials, preventing ground loops.
-- Supercapacitor protects the battery from high peak currents and cold-weather voltage sags.
-
-**Cons:**
-- Requires physical space for panel mounting and adequate sun exposure.
-- Weather dependent.
-- Hardware complexity due to the multi-stage hybrid system.
-
-**References:** [SS-3], [SS-9]–[SS-14], [SS-16]
-
-##### 2. Dual-Input Hybrid Power Architecture (Field Source + Bench DC Jack)
-
-**Architecture:** A power distribution board that accepts an external field source and an indoor backup adapter. An auto-switching power multiplexer selects between them.
-
-**Pros:**
-- Bridges between a transportable field sensor and one that is easy to test on a lab bench.
-- Switches automatically to wall power indoors and to the field battery outdoors.
-- Same hardware for development, calibration, and field use.
-
-**Cons:**
-- Higher circuit complexity and component count on the custom board.
-- Requires careful PCB layout and protection to switch sources safely.
-- Wall input adds a conductive grid connection during bench use.
-
-**References:** [SS-3]
-
-##### 3. Rechargeable 18650/21700 Li-ion Pack with Integrated BMS
-
-**Architecture:** A multi-cell 18650 or 21700 lithium-ion pack with a dedicated battery management system (BMS) and a low-quiescent-current buck-boost regulator that provides a clean 5 V or 3.3 V rail, followed by a low-noise LDO for the analog section.
-
-**Pros:**
-- Smaller self-supply that fits inside a small enclosure.
-- Low cost and reliable for temporary deployments.
-- Galvanically isolated from the grid, with no external footprint.
-
-**Cons:**
-- Finite energy capacity, requiring manual recharging or pack swaps.
-- No long-term autonomous generation unless paired with solar.
-- Cannot be charged safely below about 0 °C.
-
-**References:** [SS-15], [SS-17]
-
-##### 4. Regulated AC-to-DC Wall Adapter with Isolated SMPS
-
-**Architecture:** An industrial-grade wall adapter plugged into 120 VAC, with high input-to-output galvanic isolation and reinforced insulation, followed by a low-noise LDO.
-
-**Pros:**
-- Primary laboratory and bench-testing supply for testing.
-- Clean, uninterrupted power during development.
-- Baseline noise characterization before field testing.
-
-**Cons:**
-- Wall outlet dependent, with zero field portability.
-- Introduces a conductive connection to the utility grid during bench testing.
-
-##### 5. Primary Lithium Chloride Industrial Battery Pack
-
-**Architecture:** A non-rechargeable, high-energy primary lithium battery pack paired with a hybrid capacitor to handle high-current transmission spikes. Designed with an ultra-low self-discharge rate so it can be "installed and forgotten about."
-
-**Pros:**
-- Capable of powering low-power sensor nodes for multiple years without maintenance or recharging.
-- Wide operating temperature range (-55 °C to +85 °C), making it ideal for outdoor or winter substation environments.
-- Low annual self-discharge rate.
-
-**Cons:**
-- Non-rechargeable; once depleted, the pack must be replaced.
-- Requires careful circuit design to prevent initial voltage sags during transmission bursts.
-
-**References:** [SS-15], [SS-17]
-
-##### 6. Modified Bauer 20 V Power Tool Battery with Integrated Dock and Regulation
-
-**Architecture:** A modified Harbor Freight Bauer 20 V battery charger housing functioning as a dock and enclosure, used directly with standard Bauer slide-pack batteries. It integrates an external low-voltage cutoff circuit for cell protection, a high-efficiency synchronous buck converter to step down the 20 V pack voltage, and a post-regulation low-noise LC filter with an ultra-low-noise LDO for the analog front-end.
-
-**Pros:**
-- Mechanically robust, off-the-shelf enclosure and high-current slide-lock interface.
-- Easy hot-swapping for rapid field deployment without opening the main sensor housing.
-- Galvanically isolated from the utility grid during field operation.
-- Low-cost and readily available battery packs and chargers.
-
-**Cons:**
-- Requires custom modification of charger guts and hand-wiring of protection/regulation boards.
-- Manual battery swapping and external recharging required.
-- High-frequency switching noise requires careful shielding and filtering to protect sensitive analog measurements.
-
-**References:** [SS-7], [SS-18], [SS-19], [SS-22]
-
-##### 7. Off-the-Shelf USB Power Bank with Isolated DC-DC and Low-Noise LDO
-
-**Architecture:** A commercial USB power bank (portable phone charger / USB-C PD pack) providing a reliable, rechargeable lithium-ion energy source, paired downstream with an isolated DC-DC converter module to break ground loops, followed by an ultra-low-noise LDO (like the LT3042) to feed a pristine analog rail.
-
-**Pros:**
-- Solves energy storage and charging safely out of the box with an integrated BMS, short-circuit protection, and charge indicators.
-- Seamless bench-to-field transition: plugs into standard USB wall blocks or laptops indoors, and a portable brick outdoors.
-- Excellent signal integrity when paired with isolation and low-noise post-regulation, protecting microvolt-level telluric measurements.
-
-**Cons:**
-- Requires adding external isolation and post-regulation modules between the USB output and the sensor electronics.
-- Finite capacity requiring manual recharging or swapping of the power bank.
-
-**References:** [SS-20], [SS-21], [SS-22]
-
-###### Survey of Existing Power Solutions
-- **Standard Power Banks:** Inexpensive and portable, but prone to low-load shutoffs when the sensor sleeps, and lacks galvanic isolation.
-- **Unregulated Solar to Battery:** Common in remote monitoring, but standard lead-acid or lithium setups suffer from extreme cold and lack capacity buffering for spikes [SS-6].
-- **Tapped Substation Control Power:** Highly reliable due to utility backups, but directly exposes electronics to high-voltage GPR [SS-5],[SS-8].
-
-#### Survey of Existing Weatherproofing Solutions
-
-Custom Plastic/PVC Housing
-A custom plastic housing is another possible solution. Previous research has demonstrated the use of a porous-pot electrode constructed with a thick-walled plastic tube and a modular enclosure structure \[31\]. Threaded plastic components were also used to house the wiring and other electrode components, allowing for easier maintenance, cleaning, and replacement of individual parts. The enclosure also incorporated several rubber O-rings to protect important openings, while the electrical connections were routed through sealed threaded plastic sections.
-
-Pros:
-- Cheap and material is inexpensive
-- Plastic materials is nonconductive
-- Size and shape can be customized for the system
-- Rubber O-rings can be used to seal openings
-- Design can be adapted specifically around the sensing electrode
-
-Cons:
-- Water resistance depends heavily on the quality of the build
-- O-ring installation can be difficult and non-reliable
-- Threaded joints and cable entry points may have weak points
-- More fabrication and maintenance will need to be done over time
-- Not rated for water or outdoor conditions
-- No housing components supplied
-
-EKM-17211 UL Enclosure
-The EKM-1721711 is a commercially available watertight electrical enclosure designed for outdoor applications. The enclosure is made from polycarbonate and has a hinged lid, heavy gasket, and stainless steel hinges. This enclosure is rated for outdoor conditions including rain, dust and dirt. It also comes with a rail mounting system that could be used to mount the system.
-
-Pros:
-- Easily and readily available
-- Polycarbonate construction is nonconductive and corrosion resistant
-- Integrated drip Edge to prevent water from entering system
-- Gasketed hinged around the opening making secure and water resilient
-- Rail system included for mounting
-- Relatively cheap
-- Rated for outdoor use and water conditions
-
-Cons:
-- Cable holes would have to be drilled out and added by the team and would require gasket sealed cable connections
-- Clear lid can cause internal temperatures to rise in direct sunlight
-- Underground use unknown, primarily used for aboveground \[32\]
-
-NEMA 6P Enclosure
-The NEMA 6P enclosure provides the highest level of water protection among these existing solutions. It is specifically designed for outdoor electrical equipment that may be exposed to harsh environmental conditions.\[33\] This type of enclosure is suitable for submersible applications and uses waterproof gaskets to help prevent water, dust, and other contaminants from entering the enclosure.
-
-Pros:
-- Provides stronger water protection than any other existing solution
-- Designed for environments where prolonged water exposure may occur. \[33\]
-- Gasketed enclosure that prevent dust, water, and insects from entering the system
-- Available in nonconductive materials
-- Tested for outdoor use
-- DIN rails, cable glands, and mounting panels come with the system
-- Rated for outdoor use and water conditions
-Cons:
-- Slightly more expensive than a basic outdoor junction box or custom PVC enclosure
-- Drill holes would need to be installed and properly sealed with rated cable glands to maintain water resistance
-- Does not protect against oil and coolant leakage
-- Not instantly available
-
-### Measures of Success
-#### Microcontroller Measures of Success
+## Measures of Success
+### Microcontroller Measures of Success
 - Sufficient computing power to process the information received by sensor
 - Withstand fault current events
 - Minimal power consumption during detection
 - Minimal power consumption during dormancy
 
-#### Power Subsystem Measures of Success
+### Power Subsystem Measures of Success
 - **Autonomous Uptime:** Achieve continuous 24-hour operation under load.
 - **Transient Voltage Stability:** Testing through oscillating the supercapacitor layer successfully limits voltage sags during spikes.
 - **Power Quality and Noise Suppression:** Verify that the output of the regulators and LDOs meet low-noise requirements, ensuring no measurable power supply leaks into the sensor's bandwidth [SS-7],[SS-22].
 - **Source Checking:** Demonstrate fault-free switching between the bench DC adapter and field power source without resetting the system.
 
+## Resources
 
-### Resources
+### Budget
 
-#### Budget
+#### Telecommunication Subsystem Budget
 
-##### Telecommunication Subsystem Budget
+*LTE/NB-IoT Motem*: Cost: $8 - 150, depending on if the motem is connected to an MCU.
 
-*LTE/NB-IoT Motem*: Cost: $8 - 150, depending on if it will be designed from scratch.
-
-*Antenna* Cost: TBD; meets the band requirements of our cell line.
+*Antenna*: largely dependent on communication module. $0 for already implemented antennas. $3-1000 for privately designed antenna to gateway systems. **Seal Team 2** shall choose an antenna <$50.
 
 *SIM Provider* Cost: ~$0-$90/mo.
 
-##### Microcontroller Budget
+#### Microcontroller Budget
 
 *MCU*: The microcontroller selected will range from $4 to $150 depending on the manufacturer selected from the previously listed options.
 
 *Programming Software*: Any MCU obtained for this project should have free licensing whether through being free for all users or having free seats for student users.
 
-##### Power Subsytem Budget
+#### Power Subsytem Budget
 
-### 1. Energy Generation: Monocrystalline Solar Panels
+##### 1. Energy Generation: Monocrystalline Solar Panels
 
 *Required for Option 1.*
 
@@ -600,7 +354,7 @@ Cons:
 
 References: [SS-9], [SS-10], [SS-11]
 
-### 2. Charging and MPPT Controllers
+##### 2. Charging and MPPT Controllers
 
 - **Option A — Analog Devices LT3652 (Monolithic Solar Power Battery Charger):** Step-down battery charger IC tailored for MPPT operation ($12.00 eval/IC).
 - **Option B — Texas Instruments BQ25713 (Buck-Boost Charge Controller IC):** High-performance IC supporting 1 to 4 cells with I²C control ($8.00).
@@ -608,7 +362,7 @@ References: [SS-9], [SS-10], [SS-11]
 
 References: [SS-12], [SS-13]
 
-### 3. Energy Storage: LiFePO₄ and Primary LiSOCl₂
+##### 3. Energy Storage: LiFePO₄ and Primary LiSOCl₂
 
 *Covers Options 1, 3, and 5.*
 
@@ -618,7 +372,7 @@ References: [SS-12], [SS-13]
 
 References: [SS-14], [SS-15]
 
-### 4. Supercapacitors and Hybrid Layer Capacitors (HLC)
+##### 4. Supercapacitors and Hybrid Layer Capacitors (HLC)
 
 - **Option A — Eaton / Bussmann HV Series 2.7 V 100 F Cylindrical Supercapacitor:** High capacitance for smoothing peak loads ($8.00).
 - **Option B — Kemet / Maxwell Technologies 3.0 V 50 F Prismatic Supercapacitor Cell:** Low ESR cell suited for fast transient response ($7.50).
@@ -626,7 +380,7 @@ References: [SS-14], [SS-15]
 
 References: [SS-16], [SS-17]
 
-### 5. DC-DC Regulators and Power Management ICs
+##### 5. DC-DC Regulators and Power Management ICs
 
 - **Option A — Texas Instruments TPS63060 (High-Efficiency Buck-Boost Converter):** Maintains stable output when input voltage fluctuates ($5.00).
 - **Option B — Texas Instruments LMZ31704 (Power Module with Integrated Inductor):** Simplifies layout and reduces high-frequency switching noise ($9.00).
@@ -634,7 +388,7 @@ References: [SS-16], [SS-17]
 
 References: [SS-22]
 
-### 6. Auxiliary Interface and Protection Hardware
+##### 6. Auxiliary Interface and Protection Hardware
 
 *Supports Option 2.*
 
@@ -644,7 +398,7 @@ References: [SS-22]
 
 References: [SS-1]
 
-### 7. Cordless Drill Battery Setup: Harbor Freight Bauer 20 V System
+##### 7. Cordless Drill Battery Setup: Harbor Freight Bauer 20 V System
 
 *Supports Option 6.*
 
@@ -654,7 +408,7 @@ References: [SS-1]
 
 References: [SS-18], [SS-19]
 
-### 8. Portable USB Power and Isolation Modules
+###### 8. Portable USB Power and Isolation Modules
 
 *Supports Option 7.*
 
@@ -664,7 +418,7 @@ References: [SS-18], [SS-19]
 
 References: [SS-20], [SS-21], [SS-22]
 
-#### Personnel
+### Personnel
 
 Alex Bailey: SolidWorks, C/C++, MATLAB, LTSpice, soldering, Power
 Electronics, Electromagnetics
@@ -689,34 +443,17 @@ and expectation of Dr. Van Neste. He will also serve as quality control
 and pacing for the duration of this project because of his previous
 experience as head of senior design.
 
-#### Timeline
-Preface: We need to get together and discuss a timeline in more detail because the Gantt Chart we have is outdated, the midterm documents will include the updated Gantt Chart. 
+### Timeline
 
-gantt
-    title Project Timeline
-    dateFormat  YYYY-MM-DD
-    
-    section Planning
-    Phase 1 :active, p1, 2026-06-01, 10d
-    
-    section Development
-    Phase 2 :active, p2, after p1, 15d
-    
-    section Testing
-    Phase 3 :crit, active, p3, after p2, 10d
-    
-    section Deployment
-    Phase 4 :active, p4, after p3, 5d
+![Gantt Chart](image-2.png)
 
-### Specific Implications
+## Specific Implications
 Dr. Charles Van Neste is the customer for this project. The customer requires a system that can provide near real-time measurements of voltage differences in the ground and make those measurements accessible from a cellular device. Dr. Van Neste's research focuses heavily on energy generation and transmission, including wireless and quasi-wireless power transfer, high-frequency inverter design, electronic instrumentation, and electromagnetic interactions.
 
 During this research, unexpected or cross-coupled voltage readings can make it difficult to determine whether a signal is produced by the experimental system or by another source in the surrounding environment. One possible source is naturally occurring or infrastructure-related telluric ground current, including current associated with nearby electrical substations and grounding systems. The purpose of this project is therefore to provide Dr. Van Neste with a dedicated telluric sensing system that can continuously monitor differences in ground potential. By comparing these measurements with experimental data, the customer will be better able to determine whether additional voltage is present in the ground and distinguish background ground-current effects from the signals produced by his wireless power-transfer experiments.
 
 
-### Broader Implications, Ethics, and Responsibility as Engineers
-
-
+## Broader Implications, Ethics, and Responsibility as Engineers
 Broader Implications:
 - Power Grid Stability and Transformer Overheating: Geomagnetically Induced Currents (GICs) flow thorugh a neutral to ground connection. This DC offset causes half-cycle saturation, generates high harmonics, reactive power consumption, and local transformer overheating. A telluric sensor can serve as a good early warning for grid operators. 
 - Public Safety and Fire Prevention: Ground faults and earth currents occasianlly iginite vegetation or damage electrcial equipment. Earlier detection timing can help to reduce these wildfires and outages.
@@ -746,7 +483,7 @@ Responsibility as Engineers:
 - Protecting the Public: Prioritze public and worker safety through design. Consider consequences of missed detections, incorret readings, and procedures.
 
 
-### References
+## References
 \[1\] A. C. Farris, W. A. Stump, C. S. Johnson, R. Craven, and C. W. Van
 Neste, "Grid-induced telluric currents for non-contact load monitoring
 and fault detection," in *Proc. 2023 IEEE Energy Conversion Congress and
@@ -836,39 +573,129 @@ https://estore.st.com/en/products/microcontrollers-microprocessors.html?cat=2219
 
 [MW.6] P. L. Dordal, “1.2: Data Rate, Throughput and Bandwidth,” in An Introduction to Computer Networks, Engineering LibreTexts. [Online]. Available: https://eng.libretexts.org/Bookshelves/ComputerScience/Networks/AnIntroductiontoComputerNetworks%28Dordal%29/01%3AAnOverviewofNetworks/1.02%3ADataRateThroughputand_Bandwidth. [Accessed: Oct. 9, 2026].
 
-### Statement of Contributions
+[SG1] Occupational Safety and Health Administration (OSHA), "Specific Excavation Requirements," 29 C.F.R. § 1926.651. [Online]. Available: https://www.osha.gov/laws-regs/regulations/standardnumber/1926/1926.651
+
+[SG2] Tennessee 811, "Tennessee 811 Home Page." [Online]. Available: https://www.tenn811.com/
+
+[SG3] Tennessee Valley Authority (TVA), "Who to Call for Help," Right-of-Way Maintenance. [Online]. Available: https://www.tva.com/energy/transmission/right-of-way-maintenance/who-to-call-for-help
+
+[SG4] Occupational Safety and Health Administration (OSHA), "Selection and Use of Work Practices," 29 C.F.R. § 1910.333. [Online]. Available: https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.333
+
+[SG5] Occupational Safety and Health Administration (OSHA), "Electrical Protective Equipment," 29 C.F.R. § 1926.97. [Online]. Available: https://www.osha.gov/laws-regs/regulations/standardnumber/1926/1926.97
+
+[SG6] Occupational Safety and Health Administration (OSHA), "Live-Line Tools," 29 C.F.R. § 1926.957. [Online]. Available: https://www.osha.gov/laws-regs/regulations/standardnumber/1926/1926.957
+
+## Statement of Contributions
 Alexander Bailey: Introduction, Background, Personnel, References
 
 Silas Garmon: Editing of Introduction, Personnel, Specifications, Constraints, Existing Solutions, References, Measures of Success, Formatting, Budget
 
-Mark Myers: Editing of Introduction, Personnel, Specifications, Constraints, Existing Solutions, References, Specific Implications
+Mark Myers: Editing of Introduction, Personnel, Specifications, Constraints, References, Specific Implications
 
-Seth Strahan: Budget, Personnel, Specifications, Constraints, Existing Solutions, References, Ethics, Broader Implications, Responsibility as Engineers
+Seth Strahan: Budget, Personnel, Specifications, Constraints, References, Ethics, Broader Implications, Responsibility as Engineers
 
-Christopher Wolk: Budget, Specifications, Constraints, Existing Solutions, References
+Christopher Wolk: Budget, Specifications, Constraints, References, Large Scale Editing
 
 # Conceptual Design
 ## Introduction
 
-EXCERPT OF ALEX'S WORK
+Across the globe, electrical power is supplied from source to recipient via power lines. These lines carry single and three phase power while often carrying telecommunication signals below on a separate section. If these power lines fail, it can result in loss of magnitude of power (brownout) or loss of power altogether (blackout). This can happen from a transformer blowing up, power lines grounding through trees, or power lines falling either into other lines or onto the ground. Any instance which results in unprompted behavior is called a fault. Currently, the main method in locating a fault is by mobilizing service workers and garnering information from customer calls \[1\]. This, as one can imagine, is quite costly both monetarily and temporally.
 
-Across the globe,  electrical power is supplied from source to recipient via power lines. These lines carry single and three phase power while often carrying telecommunication signals below on a separate section. If these power lines fail, it can result in loss of magnitude of power (brownout) or loss of power altogether (blackout). This can happen from a transformer blowing up, power lines grounding through trees, or power lines falling either into other lines or onto the ground. Any instance which results in unprompted behavior is called a fault. Currently, the main method in locating a fault is by mobilizing service workers and garnering information from customer calls \[1\]. This, as one can imagine, is quite costly both monetarily and temporally.
+In light of this challenge, **Seal Team 2** shall develop an affordable, replicable prototype sensor which will relay information pertaining to the induced telluric currents. This information shall be transmitted wirelessly to the company supplying and managing the area's power. Such information will be primarily contained to fault detection for the scope of this prototype. This sensor will take information on the voltage and telluric current density surrounding the power pole, filter the data so that only the $60$, $180$, and $540$ Hz harmonics are considered, then process the data and signal a fault if necessary. This prototype will include electrodes, an MCU unit, a telcommunication module, and a local power unit. The entire system will be designed to operate effectively outdoors in all outdoor conditions at the site, as per the customers specifications
 
-In light of this challenge, **Seal Team 2** shall develop an affordable, replicable prototype sensor which will relay information pertaining to the induced telluric currents. This information shall be sent across cell lines to the company supplying and managing the area's power. Such information will be primarily contained to fault detection for the scope of this prototype. This sensor will take information on the voltage and telluric current density surrounding the power pole, filter the data so that only the $60$, $180$, and $540$ Hz harmonics are considered, then process the data and signal a fault if necessary. This prototype will include electrodes, an analog filter, a PID controller, and a cellular communicator.
+### Scope
+
+In this proposal, **Seal Team 2** will provide a comprehensive view of the problem and solution strategy for the design the Telluric Current Sensor. The Formulating the Problem section shall fence in the design aspects by clarifying who the stakeholders are, providing a background of relevant theory to the design, and enumerating the specifications and constraints imposed on the design by the stakeholders and governing bodies. The document shall then provide a survey of existing solutions for fault indication. The document will then define and clarify **Seal Team 2's** measures of success explaining the experiments and methodologies that will be used to meet the systems specifications and constraints. The resources section will propose an estimated budget for the system, provide a division of labor for the members of **Seal Team 2**, and provide a detailed timeline for the design of the sensor. The document will then explain the specific and broader implications for the design of the Telluric Current Sensor.
+
 ## Restating the Fully Formulated Problem
+
+**Seal Team 2** shall design a Telluric Current Sensor that obtains reliable current density information of the telluric currents emmitted from a substation while adhering to the **TCS-DS** specifications and DAQ subsystem constraints. The Sensor shall contain an MCU that captures the telluric current data digitally, extracts the 60 Hz, 180 Hz, and 540 Hz amplitudes from an FFT algorithm, determines the existence of a ground fault, and sends the data serially to a telecommunications module while adhering to the **TCS-MS** specifications and MCU subsystem constraints. The Sensor shall contain a telecommunications module to transmit the data across a distance of 1 km to a gateway accessible by all stakeholders while adhering to the **TCS-TS** specifications and telecommunication subsystem constraints. The Sensor shall be powered locally with minimal maintenance needs as per the **TCS-PS** specifications and power subsystem constraints. Finally, the sensor shall be housed in a waterproof and weatherproof encasement, and should be capable of operating in all outdoor conditions as per the **TCS-WS** specifications and Weatherization subsystem constraints.
+
 ## Comparative Analysis of Potential Solutions
 
 The following section provides Seal Team 2's comparative analysis of potential solutions for designing the telecommunication subsystem of the Telluric Current Sensor. This section will begin by determining and justifying the choice of cellular as the medium for which the data will be transmitted. This section will then compare 5 choices for a cellular hardware module as well as 5 choices for a connectivity/SIM module.
+
+## Comparison of Electrodes
+
+
+Firstly, the decision must be made on how the data will be collected.
+Any method must measure the potential difference through the soil to
+find the electric field. Because all of the ways to extract voltage from
+the earth rely on implanted conductors, the only decision to be reached
+is the shape and the material.
+
+The shape, or burial configuration, is what determines the measurable
+data points and the options considered were: delta, wye, collinear rods,
+and parallel plates. The metrics for the decision matrix were: ease of
+burial, data quality, and cost. Data quality is the sublime metric for
+the shape because poor quality data is useless so it is weighted double
+the others.
+
+The delta configuration is formed by three electrodes in an equilateral
+triangle; this would give us three voltage differences that form a loop
+(helpful for Kirchoff's Equations). The wye configuration is the same as
+the delta, but there is an electrode place in the center of the delta;
+this would give us six voltage differences that form many closed loops.
+The collinear rods would give us one voltage difference likewise for the
+parallel plates. This shows that the data quality would be highest for
+the wye configuration. for the parallel plates, there was uncertainty
+whether or not the voltage difference may self-induce an electric field
+across the plates, but it wasn't worth testing as it results in the same
+data points as the rods. The ease of burial was determined by how many
+implanted electrodes were needed (delta and wye being approximately
+similar). The cost was related to the added expense of material and
+circuity/processing power needed (which makes for the separation of
+delta and wye). Overall, the wye configuration was shown to be superior
+to the other options.
+
+::: {#tab:placeholder}
+                 Shape                 Ease of Burial (0.25)   Data Quality (0.5)   Cost (0.25)   Total
+  ----------------------------------- ----------------------- -------------------- ------------- -------
+           Delta ($\Delta$)                      4                     3                 4         3.5
+                Wye (Y)                          4                     5                 3        4.25
+   Collinear Rods ($\cdot\,\,\cdot$)             5                     2                 5         3.5
+        Parallel Plates (\| \|)                  3                     1                 2        1.75
+
+  : Decision matrix determining burial configuration of electrodes
+:::
+
+Next is to determine the material of the electrodes. Of course, it must
+be conductive and withstand the environment well (because they cannot be
+shielded so that they may conduct). Corrosion resistant metals include:
+aluminum, copper, brass, bronze, stainless steel, galvanized steel and
+titanium. Each of these develops a patina or surface oxide which changes
+the conductivity but some corrode faster or to a greater detriment in
+soil. Another factor to consider is the cost which will conceptually
+incorporate lead time and supply capability. Lastly, resistivity will be
+included to minimize the voltage drop across the electrode. Resistivity
+won't be rated very highly because it's only a scalar shift. Cost and
+patina will be weighed very high for obvious reasons but patina higher
+still than cost. Overall, stainless stell is shown to be the superior
+material. Patina [TT,CS,CO,CS2,FC]; Cost [FCE], Resitivity [AH]
+
+::: {#tab:placeholder}
+       Material       Patina (0.5)      Cost (0.4)        Resistivity (0.1)     Total
+  ------------------ -------------- ------------------ ----------------------- -------
+       Aluminum            1                4                     4              2.5
+        Copper             2                3                     5              2.7
+        Brass              2                3                     4              2.6
+        Bronze             2                2                     4              2.2
+   Stainless Steel         3                5                     3              3.8
+   Galvanized Steel        1                5                     3              2.8
+       Titanium            0                0                     3              0.3
+
+  : Decision matrix determining material of electrodes
+:::
 
 ### Comparison of Communication Media
 
 For the purposes of Seal Team 2's telcommunication subsystem: the following 4 communication media: LoRaWAN, Wi-Fi, Bluetooth, and Cellular will be weighed under four categories: general power consumption, range, accessibility, cost to determine the optimal media for the Telluric Current Sensor.
 
--LoRaWan Module: LoRaWAN, or Long Range Wide Area Networking, is a wireless platform and network catered towards the transmission of IoT device data. According to SemTech, the developer of the physical LoRa module Hardware, LoRa is optimized to deliver data over a long range with minimal power consumption [1][Semtech]. SemTech also boasts a wide range for their devices allowing for data transmission up to ~3km. As for accesibility, according to ttnmapper.org, a website that provides a heatmap of all public LoRaWAN Gateways on earth, Cookeville, Tenessee does not have any public LoRaWAN coverage (Refer to Figure MW.1) [2]. This would require Seal Team 2 to implement a private local gateway at the substation, which could be costly and require the use of the companies power supply, thereby nullifying the low power constraint imposed by the customer, Dr. Van Neste.
+-LoRaWan Module: LoRaWAN, or Long Range Wide Area Networking, is a wireless platform and network catered towards the transmission of IoT device data. According to SemTech, the developer of the physical LoRa module Hardware, LoRa is optimized to deliver data over a long range with minimal power consumption [1]. SemTech also boasts a wide range for their devices allowing for data transmission up to ~3km. As for accesibility, according to ttnmapper.org, a website that provides a heatmap of all public LoRaWAN Gateways on earth, Cookeville, Tenessee does not have any public LoRaWAN coverage (Refer to Figure MW.1) [2]. This would require Seal Team 2 to implement a private local gateway at the substation, which could be costly and require the use of the companies power supply, thereby nullifying the low power constraint imposed by the customer, Dr. Van Neste.
 
 -WiFi Module: A Wi-Fi based design is another potential candidate for the design. Modules such as the ESP32-WROOM-32E house a Wi-Fi module and a microcontroller in one device. This could reduce component count and simplify the firmware development as compared to the other options. However, upon review of the datasheets of existing Wi-FI modules, the average power output during the active mode of Wi-Fi data transmission is much larger in comparison to the LoRaWan module (See Table 16: Current Consumption Depending on RF Modes from the ESP32-WROOM-32E datasheet [3]). Furthermore, locally housed Wi-Fi modules generally are designed to operate locally, and the >1km range specification from the customer exceeds these modules operating range.
 
--Bluetooth Module: In the typical use case, devices that use Bluetooth do not operate over a wide range. However, upon futher review, Seal Team 2 found Bluetooth Low Energy, which offers low-power communication over a longer range via forward-error-correction coding at the expense of data rate.[4][: Bluetooth low energy primer]. Bluetooth does emphasize that the practical range of the transmission still depends heavily on the radio configuration, antenna characteristics, receiver sensiticity, and therefore establishing a >1 km link could require specialized hardware that could be expensive. 
+-Bluetooth Module: In the typical use case, devices that use Bluetooth do not operate over a wide range. However, upon futher review, Seal Team 2 found Bluetooth Low Energy, which offers low-power communication over a longer range via forward-error-correction coding at the expense of data rate.[4]. Bluetooth does emphasize that the practical range of the transmission still depends heavily on the radio configuration, antenna characteristics, receiver sensiticity, and therefore establishing a >1 km link could require specialized hardware that could be expensive. 
 
 -Cellular Module: Cellular modules, LTE-M and NB-IoT technologies in particular, pose as strong candidates for the wireless communication module. Unlike the other three potential solutions, cellular communication does not ordinarily require the project team to intall and maintain a receiving gateway due to the existing cellular network infrastructure. Choosing a cellular module does, however, introduce the need for a connectivity/SIM service which introduces an additional periodic cost for the product. However, since our project sends minimal data, (three FFT amplitudes and a fault indicator), this payment can be minimized, *See Connecticity/SIM Analysis Subsection. Furthermore, the efficiency of a cellular transmission varies heavily on the choice of cellular technologies and generally the power output in the active mode is higher than that of the LoRa Module.
 
@@ -930,7 +757,7 @@ According to the nRF9160 DK setup guide, an iBasis eSIM is preloaded with 10MB. 
 
 From the analyses above, Seal Team 2 shall use the Nordic Semiconductor nRF9160 as a microcontroller + telecommunications unit to transmit the sensor data via Cellular LTE-M/NB-IoT connectivity to the recipient (customer, research participants, etc.).
 
-## Comparative Analysis of Potential Solutions
+## Comparative Analysis of Potential Solutions for Power Subsystem
 
 This section evaluates potential power architectures, discusses key technical and operational design considerations, and outlines the primary factors influencing the final solution selection. It provides a structured evaluation to identify and justify the chosen power system architecture.
 
@@ -939,7 +766,9 @@ This section evaluates potential power architectures, discusses key technical an
 Designing a power supply system for a field-deployable telluric ground fault sensor requires balancing several engineering constraints. Because telluric sensors measure ultra-low-frequency, microvolt-level earth potential differences, traditional power design priorities must be ordered to protect instrumentation sensitivity:
 
 - **Signal Integrity and Electrical Noise:** High-frequency switching ripple ($f_{\text{sw}} > 100$ kHz) from unshielded DC-DC converters can easily alias into the sensor's analog acquisition band (0.01 Hz to 100 Hz). The power architecture must support post-regulation ripple suppression to under 10 mV peak-to-peak, with target analog rails requiring less than 10 μV RMS noise [SS-22].
+
 - **Galvanic Isolation:** High Ground Potential Rise (GPR) near utility substations during ground faults creates severe safety hazards and ground loops. The power source must maintain reinforced isolation (minimum 2 kV) to decouple the internal sensing ground from external grid potentials [SS-5],[SS-8],[SS-21],[SS-3].
+
 - **Bench-to-Field Adaptability:** The system must seamlessly transition between long-term laboratory testing on utility AC power and standalone, transportable field deployments without requiring hardware redesign.
 - **Implementation Complexity and Cost:** To keep the total Bill of Materials (BOM) within capstone budget constraints, the design must avoid unnecessary custom battery management system (BMS) development where certified commercial solutions exist [SS-20].
 - **Regulatory and Safety Compliance:** All energy storage and distribution wiring must strictly adhere to NEC (NFPA 70) Articles 250, 706, and 725, as well as NFPA 855 safety parameters for lithium-based storage [SS-2].
@@ -949,51 +778,16 @@ Designing a power supply system for a field-deployable telluric ground fault sen
 The microcontrollers that are the main options to consider are the STM32U5, the TI MSP430, the Nordic nRF9161, the ESP32-S3, the Particle BSoM B404, the Raspberry Pi Pico 2, and Teensy 4.1. There is also a laptop option included as a control option. These options will be compared using select key parameters.
 
 #### Parameters 
-For one, this microcontroller must be efficient with power consumption. Since sampling data periodically increases the chances of a fault occuring and not being detected, continuous sampling would need to be used. Because of this, power efficiency is paramount, with a need for low current usage and sleep modes as apart of the system. For this reason, the power efficiency is weighed at 35%. An option receiving a score of 1 would be a device that draws current in the upper milliamps during active modes and lacking sleep mode options. On the other end, a system receiving a 5 would be a system with a robust sleep mode and drawing current in the microamp to sub-microamp range.
 
-Longevity and robustness will be defined as ability to meet the IEEE 495-2025 standard of operating temperature of devices used for fault current indication rated at -40\degC to 85\deg C, and also whether the market for the option is intended for industrial use as opposed to educational or commercial use [SG11]. This is category is important because to market this project, it needs to meet industry standards. For this reason, longevity and robustness is weighed at 30%. An option receiving a score of 5 is a product that exceeds the desired ratings and is tailored for industrial applications, while an option receiving a 1 would be intended for personal/commercial use and failing to meet IEEE 495-2025 standards on operating temperatures.
+Ease of Cellular Module Communication Configuration Set Up will be defined as the compatibility and relative ease of setting up the microcontroller with cellular communication. While having a separate modem is an option, this option would introduce complex RF PCB design that would significantly increase the difficulty of implementation of this system. This decision was made based upon coordination with the telecommunications subsystem. Because of this, this parameter will be weighed at 35%. An option receiving a score of a 1 would be an option that is incompatible with cellular communication at the start or would have a steep configuration process, while an option receiving a 5 is an option that has the most direct set up process.
+
+Additionally, the microcontroller must be efficient with power consumption. Since sampling data periodically increases the chances of a fault occuring and not being detected, continuous sampling would need to be used. Because of this, power efficiency is paramount, with a need for low current usage and sleep modes as apart of the system. For this reason, the power efficiency is weighed at 25%. An option receiving a score of 1 would be a device that draws current in the upper milliamps during active modes and lacking sleep mode options. On the other end, a system receiving a 5 would be a system with a robust sleep mode and drawing current in the microamp to sub-microamp range.
+
+Longevity and robustness will be defined as ability to meet the IEEE 495-2025 standard of operating temperature of devices used for fault current indication rated at -40\degC to 85\deg C, and also whether the market for the option is intended for industrial use as opposed to educational or commercial use [SG11]. This is category is important because to market this project, it needs to meet industry standards. For this reason, longevity and robustness is weighed at 20%. An option receiving a score of 5 is a product that exceeds the desired ratings and is tailored for industrial applications, while an option receiving a 1 would be intended for personal/commercial use and failing to meet IEEE 495-2025 standards on operating temperatures.
 
 Cost and practicality will be defined as a combination of the practicality of the option as a part of a device used in field testing as well as overall cost of the microcontroller. This category is not as important as parameters such as power efficiency or longevity and robustness, so it is weighed at 15%. An option receiving a 5 is one that is low cost, highly portable, and compact in size, while an option receiving a 1 is an option that can either cost significantly more than the other options or has considerable size differences from the other options.
 
 Computational power will be defined as the microcontroller's ability to compute efficiently for the purposes it is designed to complete. Since the MCU's biggest computational task will be an FFT and sending information, this category does not need to be weighed as highly as the others, meaning that it will only be weighed at 10%. An option receiving a 5 is an option that can perform significantly higher than what is expected of it, and an option receiving a 1 is an option that would not be viable for this project.
-
-Ease of Cellular Module Communication Configuration Set Up will be defined as the compatibility and relative ease of setting up the microcontroller with cellular communication. Because a separate modem is a viable option, this category will only be weighed at 10%. An option receiving a score of a 1 would be an option that is incompatible with cellular communication at the start or would have a steep configuration process, while an option receiving a 5 is an option that has the most direct set up process.
-
-#### Power Efficiency
-- The STM32U5 is apart of the ST's ultra-low-power line of microcontroller options. This component has a 19.5 μA/MHz Run mode and has options for a low-power background autonomous mode (LPBAM) which allows for peripherals to operate in Stop mode, which means the peripherals can operate without software running. With these capabilities, the STM32U5 serves as a strong contender in terms of power efficiency [SG1]. For this reason, the STM32U5 receives a 5 in this category.
-- The TI MSP430 is a device that has a DMA controller that allows for movement of data without the CPU, meaning that data can move around the peripheral without exiting sleep mode. This device draws 0.35 µA when in Real-Time Clock (RTC) mode, and has an even lower current in shutdown mode of 0.02 µA [SG2]. For this reason, the TI MSP430 receives a 5 in this category.
-- The Nordic nRF9161 is a device with adequate power efficiency, consuming under 3 mA during active modes and consumes in the microamp range during sleep mode [SG3]. Because of this, the nRF9161 receives a 4.
-- The ESP32-S3 has sleep mode capabilities with sufficient power efficiency, but during active operations there is higher current drawing within the tens milliamp of range [SG4]. Therefore, a 3 is alloted in this option.
-- The Particle BSoM B404 is similar to the ESP32-S3 in terms of power consumption. It also has low consumption during sleep modes, but higher active mode power consumptions in the tens of milliamps range, primarily because of the cellular module on the device [SG5]. Also similar to the ESP32-S3, this MCU will get a 3 in this category.
-- The Raspberry Pi Pico 2 does not perform at the same level as the other MCUs listed, as its base low-power mode consumes more current than the others and draws milliamps during active operations [SG6]. For this reason, The Pico 2 will receive a 3. REVIEW THIS
-- The Teensy 4.1 draws 100 mA of current at a clock rate of 600 MHz, which indicates that the Teensy 4.1 performs poorly at power efficiency [SG7]. For this reason, the Teensy 4.1 will receive a 1 in this category.
-
-#### Longevity & Robustness
-- The STM32U5 also has an exemplary operating rating of -40\deg C to 85\deg C, with even some variants operating up to 125\deg C, proving itself to be a more than sufficient candidate in terms of surviving industrial conditions [SG1]. For this reason, this MCU will receive a 5 in this parameter.
-- The TI MSP430 also meets the IEEE 495-2025 standards of environmental ratings, with the ability to operate at temperatures of -40\deg C to 85\deg C, making it reliable for this project [SG2]. Thus, the TI MCU will receive a 4.
-- Like the TI MCU, the Nordic MCU also meets the IEEE 495-2025 standards of environmental ratings, which indicates this MCU as being sufficient for this category [SG3]. Thus, it is alloted a 4.
-- While the ESP32-S3 does meet the temperature ratigns of IEEE 495-2025, the modules it is paired with may not depending on the product, and this MCU is not intended for industiral compared to other MCUs like the STM32U5 and the TI MSP430 [SG4]. Becayse of this, the MCU will be alloted a 3. REVIEW THIS
-- The BSoM B404 has a recommended operating range of -20\deg C to 65\deg C. Because of this, it would not perform in more extreme environments and does not meet IEEE 495-2025 standards [SG5]. Therefore, the score it receives is a 3.
-- The Raspberry Pi Pico 2 operates from -20\deg C to 85\deg C, which indicates that this device also does not meet the requirements of IEEE 495-2025 [SG6]. Therefore, this board will receive a 2. Since this board is also not designed for industrial applications compared to something like the Particle MCU, this would also reflect in a lower score
--  The Teensy 4.1 does not meet temperature requirements with a range of 0\degC to 70\degC, and a low end operating temperature right at freezing indicates that this system would not perform well in an outdoors industrial setting, meaning that it should receive a 1. [SG8].
-
-#### Cost & Practicality
-- The STM32U5 is priced in the $10-$20 range and is a compact size, making it a viable option in terms of practicality. Thus, it receives a 4.
-- The MSP430 is also priced in the $10-$20 range and is a compact size, making it a viable option in terms of practicality. This microcontroller also receives a 4.
-- The cost for the nRF9161 is around $30 and it relatively larger than options like the STM32U5 and the TI MSP430, but it compensates this price difference by creating a greater simplication of the subsystems with the cellular module.
-- The ESP32-S3 is priced similarly to the STM32U5 and the TI MSP430, making it another low cost option, giving it a 4.
-- The Particle BSoM B404 is the most expensive option at approximately $60, but there is the added benefit that this option is the easiest to set This fact alleviates the cost of this device since the higher upfront cost can be counteracted by the Particle Free cellular plan in addition to the MCU coming with a cellular module, simplifying the subsystems of this project [SG9]. Considering all of this information, the Particle microcontroller will still receive a 3 rating.
-- The Raspberry Pi Pico 2 is priced similarly to the STM32U5 and the TI MSP430, giving it a 4 rating.
-- The Teensy 4.1 has a low price point like the other inexpensive models, but it is also a relatively larger device, making it less practical to implement.
-
-#### Computational Performance
-- The STM32U5 has a 32-bit ARM Cortex-M33 core running up to 160 MHz, providing sufficient performance for this design, giving it a 4 rating [SG1].
-- The TI MSP430 is built on a 16-bit architecture, making it to be an inferior option to all other options in this list, giving it a 2 rating [SG2].
-- The Nordic nRF9161 runs on a 32-bit ARM cores clocked around 64 MHz,giving it a rating of 4 [SG3].
-- The ESP32-S3 features dual-core Xtensa LX7 processor up to 250 MHz, also giving it a rating of 4 [SG4].
-- Like the Nordic microcontroller, the Particle BSoM B404 is built around 32-bit ARM cores, also giving it a 4 [SG5].
-- The Raspberry Pi Pico 2 utilizes dual ARM Cortex-M33 running at 150 MHz, also giving it a 4 [SG6].
-- The Teensy 4.1 has the superior architecture out of the microcontrollers with a processor running at 600 MHz, giving it a rating of a 5 [SG10].
 
 #### Ease of Cellular Communication Configuration
 - The STM32U5 does not come with a cellular module, so the modem would have to be a separate implementation, giving it a 2 rating.
@@ -1004,20 +798,57 @@ Ease of Cellular Module Communication Configuration Set Up will be defined as th
 - The Pico 2 does not have cellular compatibility, giving it a 1 rating.
 - This Teensy 4.1 does not have cellular compatibilty, giving it a 1 rating.
 
+#### Power Efficiency
+- The STM32U5 is apart of the ST's ultra-low-power line of microcontroller options. This component has a 19.5 μA/MHz Run mode and has options for a low-power background autonomous mode (LPBAM) which allows for peripherals to operate in Stop mode, which means the peripherals can operate without software running. With these capabilities, the STM32U5 serves as a strong contender in terms of power efficiency [SG1]. For this reason, the STM32U5 receives a 5 in this category.
+- The TI MSP430 is a device that has a DMA controller that allows for movement of data without the CPU, meaning that data can move around the peripheral without exiting sleep mode. This device draws 0.35 µA when in Real-Time Clock (RTC) mode, and has an even lower current in shutdown mode of 0.02 µA [SG2]. For this reason, the TI MSP430 receives a 5 in this category.
+- The Nordic nRF9161 is a device with adequate power efficiency, consuming under 3 mA during active modes and consumes in the microamp range during sleep mode [SG3]. Because of this, the nRF9161 receives a 4.
+- The ESP32-S3 has sleep mode capabilities with sufficient power efficiency, but during active operations there is higher current drawing within the tens milliamp of range [SG4]. Therefore, a 3 is alloted in this option.
+- The Particle BSoM B404 is similar to the ESP32-S3 in terms of power consumption. It also has low consumption during sleep modes, but higher active mode power consumptions in the tens of milliamps range, primarily because of the cellular module on the device [SG5]. Also similar to the ESP32-S3, this MCU will get a 3 in this category.
+- The Raspberry Pi Pico 2 does not perform at the same level as the other MCUs listed, as its base low-power mode consumes more current than the others and draws milliamps during active operations [SG6]. For this reason, The Pico 2 will receive a 3. 
+- The Teensy 4.1 draws 100 mA of current at a clock rate of 600 MHz, which indicates that the Teensy 4.1 performs poorly at power efficiency [SG7]. For this reason, the Teensy 4.1 will receive a 1 in this category.
+
+#### Longevity & Robustness
+- The STM32U5 also has an exemplary operating rating of -40\deg C to 85\deg C, with even some variants operating up to 125\deg C, proving itself to be a more than sufficient candidate in terms of surviving industrial conditions [SG1]. For this reason, this MCU will receive a 5 in this parameter.
+- The TI MSP430 also meets the IEEE 495-2025 standards of environmental ratings, with the ability to operate at temperatures of -40\deg C to 85\deg C, making it reliable for this project [SG2]. Thus, the TI MCU will receive a 4.
+- Like the TI MCU, the Nordic MCU also meets the IEEE 495-2025 standards of environmental ratings, which indicates this MCU as being sufficient for this category [SG3]. Thus, it is alloted a 4.
+- While the ESP32-S3 does meet the temperature ratigns of IEEE 495-2025, the modules it is paired with may not depending on the product, and this MCU is not intended for industiral compared to other MCUs like the STM32U5 and the TI MSP430 [SG4]. Becayse of this, the MCU will be alloted a 3.
+- The BSoM B404 has a recommended operating range of -20\deg C to 65\deg C. Because of this, it would not perform in more extreme environments and does not meet IEEE 495-2025 standards [SG5]. Therefore, the score it receives is a 3.
+- The Raspberry Pi Pico 2 operates from -20\deg C to 85\deg C, which indicates that this device also does not meet the requirements of IEEE 495-2025 [SG6]. Therefore, this board will receive a 2. Since this board is also not designed for industrial applications compared to something like the Particle MCU, this would also reflect in a lower score of 2.
+-  The Teensy 4.1 does not meet temperature requirements with a range of 0\degC to 70\degC, and a low end operating temperature right at freezing indicates that this system would not perform well in an outdoors industrial setting, meaning that it should receive a 1. [SG8].
+
+#### Cost & Practicality
+- The STM32U5 is priced in the $10-$20 range and is a compact size, making it a viable option in terms of practicality. Thus, it receives a 4.
+- The MSP430 is also priced in the $10-$20 range and is a compact size, making it a viable option in terms of practicality. This microcontroller also receives a 4.
+- The cost for the nRF9161 is around $30 and it relatively larger than options like the STM32U5 and the TI MSP430, but it compensates this price difference by creating a greater simplication of the subsystems with the cellular module. Therefore, ths nRF9161 receives a 3.
+- The ESP32-S3 is priced similarly to the STM32U5 and the TI MSP430, making it another low cost option, giving it a 4.
+- The Particle BSoM B404 is the most expensive option at approximately $60, but there is the added benefit that this option is the easiest to set This fact alleviates the cost of this device since the higher upfront cost can be counteracted by the Particle Free cellular plan in addition to the MCU coming with a cellular module, simplifying the subsystems of this project [SG9]. Considering all of this information, the Particle microcontroller will still receive a 3 rating.
+- The Raspberry Pi Pico 2 is priced similarly to the STM32U5 and the TI MSP430, giving it a 4 rating.
+- The Teensy 4.1 has a low price point like the other inexpensive models, but it is also a relatively larger device, making it less practical to implement. Therefore, the Teensy 4.1 earns a 3 rating.
+
+#### Computational Performance
+- The STM32U5 has a 32-bit ARM Cortex-M33 core running up to 160 MHz, providing sufficient performance for this design, giving it a 4 rating [SG1].
+- The TI MSP430 is built on a 16-bit architecture, making it to be an inferior option to all other options in this list, giving it a 2 rating [SG2].
+- The Nordic nRF9161 runs on a 32-bit ARM cores clocked around 64 MHz,giving it a rating of 4 [SG3].
+- The ESP32-S3 features dual-core Xtensa LX7 processor up to 250 MHz, also giving it a rating of 4 [SG4].
+- Like the Nordic microcontroller, the Particle BSoM B404 is built around 32-bit ARM cores, also giving it a 4 [SG5].
+- The Raspberry Pi Pico 2 utilizes dual ARM Cortex-M33 running at 150 MHz, also giving it a 4 [SG6].
+- The Teensy 4.1 has the superior architecture out of the microcontrollers with a processor running at 600 MHz, giving it a rating of a 5 [SG10].
+
 #### Decision Matrix
 
 The decision below demonstrates all of the scores each of the options get. Each of the scores are multiplied by their weights, and the overall score is the sum of each of these multiplied scores. A laptop option is also included in this table for the sake of having a control option, but was not discussed in the previous portions of this section. In summary, the laptop would not be robust or power-efficient enough and would be an impractical option to choose.
 
-| Criteria & Weight | STM32U5 | TI MSP430 | Nordic nRF9161 | Particle BSoM | ESP32-S3 | Raspberry Pi Pico 2 | Teensy 4.1 | Laptop (Control) |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Power Efficiency (0.35) | 5 | 5 | 4 | 3 | 3 | 3 | 1 | 1 |
-| Longevity & Robustness (0.30) | 5 | 4 | 4 | 3 | 3 | 2 | 1 | 1 |
-| Cost & Practicality (0.15) | 4 | 4 | 3 | 3 | 4 | 4 | 3 | 1 |
-| Compute Performance (0.10) | 4 | 2 | 4 | 4 | 4 | 4 | 5 | 5 |
-| Ease of Cellular Communication Configuration (0.10) | 2 | 2 | 4 | 5 | 2 | 1 | 1 | 1 |
-| **Final Score** | **4.45** | **3.95** | **3.85** | **3.30** | **3.15** | **2.75** | **1.70** | **1.40** |
+| Criteria & Weight | Nordic nRF9161 | STM32U5 | TI MSP430 | Particle BSoM | ESP32-S3 | Raspberry Pi Pico 2 | Teensy 4.1 | Laptop (Control) |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| Cellular Setup Ease (0.35) | 4 | 2 | 2 | 5 | 2 | 1 | 1 | 1 |
+| Power Efficiency (0.25) | 4 | 5 | 5 | 3 | 3 | 3 | 1 | 1 |
+| Robustness / Longevity (0.20) | 4 | 5 | 4 | 3 | 3 | 2 | 1 | 1 |
+| Cost & Practicality (0.15) | 3 | 4 | 4 | 3 | 4 | 4 | 3 | 1 |
+| Compute Performance (0.10) | 4 | 4 | 2 | 4 | 4 | 4 | 5 | 5 |
+| **Final Score** | **3.85** | **3.70** | **3.45** | **3.55** | **3.15** | **2.65** | **1.70** | **1.00** |
 
-Therefore, based on the parameters needed for the microcontroller, the STM32U5 microcontrollers would be the most suitable option for this team.
+Therefore, based on the parameters needed for the microcontroller, the Nordic nRF9161 microcontrollers would be the most suitable option for this team.
+
 ### 2. Evaluation of Potential Solution Architectures
 
 Seven distinct power system architectures were hypothesized and evaluated against the project constraints:
@@ -1099,9 +930,59 @@ Based on the decision matrix analysis, **Option 7: Off-the-Shelf USB Power Bank 
 - **Development Efficiency:** Utilizing a certified commercial USB-C power bank eliminates the safety risks and development overhead associated with designing custom lithium-ion charging and BMS protection circuits, fulfilling NFPA 855 safety goals out of the box [SS-20], [SS-2].
 - **Seamless Dual-Environment Operation:** The sensor unit can be plugged into a standard 5 V wall adapter or laptop port during bench testing and calibration, and switched to a portable 20,000 mAh USB power bank for field deployments without requiring active multiplexing hardware [SS-20].
 
+### Comparative Analysis of Weatherization Solutions
+
+The weatherproofing subsystem is responsible for protecting the internal electrical components of the telluric ground sensing system from environmental exposure during outdoor operation. The subsystem must protect the electronics from rainfall, soil moisture, humidity, dust, standing water, and other environmental hazards that could cause corrosion, electrical shorts, inaccurate measurements, or equipment failure.
+The comparative analysis placed the greatest emphasis on water resistance and overall outdoor protection because of the expected operating conditions of the system. Each enclosure was evaluated based on whether it had been tested for water exposure, including submersion where applicable, and whether its design provided secure protection against environmental intrusion and tampering. Size was the next most heavily weighted factor because the enclosure must be large enough to house all required components while still remaining practical for Seal Team 2 to deploy in the field. Cost was also given significant weight because the project budget is limited and ultimately became one of the deciding factors in the final enclosure selection. The final criterion, given the lowest weight, was ease of modification. This included how easily the enclosure could be adapted for the project through the addition of cable glands, mounting hardware, and other required penetrations. Ease of modification was also tied closely to cost and risk, since improper modifications could damage the enclosure or reduce its resistance to water intrusion.
+
+NEMA Model: ZQ-161407
+The ZQ-161407 is a gray polycarbonate electrical enclosure designed for harsh outdoor environments. The enclosure is rated NEMA 6P and IP68 and has been specifically tested for protection against water intrusion in submersible conditions. It is available with either a standard screw-close cover or a screw-close cover with tamper-resistant screws [MM4]. A rubber gasket outlines the cover and works with a thick, raised rib to help maintain a watertight seal. The enclosure also includes 32 internal mounting bosses, providing flexibility for component installation and placement within the system. Its external dimensions are approximately 16 in. × 14 in. × 8.2 in. DIN rails, cable glands, and other internal mounting hardware would need to be purchased separately.
+
+Due to the ZQ-161407 being rated NEMA 6P, it received full points for water protection because the enclosure is designed for harsh wet environments and submersion conditions[MM1]. Additionally, the enclosure provides strong outdoor environmental protection, which makes it well suited for the expected deployment conditions of the telluric sensing system. The size of the enclosure is slightly smaller than ideal, but it should still provide enough space to house the required components without making field installation unnecessarily difficult.
+
+Cost is what most clearly set the ZQ-161407 apart from the other options. The enclosure is cost-effective enough that, if Seal Team 2 incorrectly modifies the enclosure and compromises its waterproofing capability, the project budget would still allow for the purchase of a replacement unit. In addition, the parts required for modification, such as cable glands and mounting hardware, are relatively inexpensive and readily available. These factors reduce both the financial risk and the overall difficulty associated with modifying the enclosure for the final system.
+
+#### Analysis of Each Option and Scoring Scale Parameters
+Scoring Scale: 5 = Excellent, 4 = Good, 3 = Acceptable, 2 = Poor, 1 = Very Poor.
+
+NEMA Model:
+H181610HCF-6P-P10
+The H181610HCF-6P-P10 is part of the Integra Premium Series of enclosures and is typically used for outdoor wall-mounted applications. Its construction is very similar to the ZQ-161407, as it is also made from gray polycarbonate and is designed for harsh outdoor environments.[MM2] The enclosure uses a hinged cover secured by four screws, and it also includes a clear cover that allows Seal Team 2 to visually inspect the internal components without opening the enclosure. The enclosure dimensions are approximately 18 in. × 16 in. × 10 in. DIN rails, mounting panels, and other internal hardware are not included with the base enclosure and would need to be purchased separately.
+
+Like the ZQ-161407, the H181610HCF-6P-P10 is rated NEMA 6P, which gives it a high level of protection against water intrusion and outdoor environmental exposure. Because of this, it received full points for both water protection and weather resistance. The enclosure also offers the option of tamper-resistant hardware, which provides an additional level of protection against unwanted access. Where the H181610HCF-6P-P10 lost points was in size and cost. Although it remains within the project size requirements, its larger dimensions would make installation and deployment more difficult than the ZQ-161407 and would provide more internal space than Seal Team 2 is expected to need.
+
+The most significant disadvantage of the H181610HCF-6P-P10 is its cost. The enclosure itself is approximately $223, and this price does not include additional items such as DIN rails, mounting panels, or water-resistant cable glands. These added costs would place greater strain on Seal Team 2’s project budget. In addition, if the enclosure were incorrectly modified and its waterproofing capabilities were compromised, purchasing a replacement would be significantly more difficult than replacing the lower-cost ZQ-161407. Although the H181610HCF-6P-P10 is easier and safer to modify than the custom PVC housing, its higher enclosure and accessory costs make it less practical for the project.
+
+Personal PVC Housing
+The Personal PVC Housing is a concept based on research conducted by Delft University of Technology and the University of Münster. The referenced design used a porous-pot electrode constructed with a thick-walled plastic tube and a custom modular enclosure system. Threaded plastic components were used to house the wiring and other internal electrode components, allowing the research team to disassemble, clean, and maintain the system with relative ease. The researchers also incorporated several rubber O-rings to protect important openings from water intrusion while still allowing the sensing portion of the electrode to maintain electrical contact with the surrounding environment.[MM3]
+
+The Personal PVC Housing is the most unique and customizable option considered; however, it would also introduce the greatest amount of risk for Seal Team 2. Its resistance to water intrusion would depend almost entirely on the quality of the team’s fabrication and installation, with no manufacturer certification verifying the completed enclosure. Unlike the H181610HCF-6P-P10 and ZQ-161407, which carry established NEMA ratings for water and outdoor protection, the Personal PVC Housing would not have a recognized environmental rating or verified performance under submerged conditions. For this reason, it received significantly lower scores in the water and outdoor protection categories.
+
+The Personal PVC Housing did receive full points for size because Seal Team 2 could design the enclosure around the exact dimensions required by the system. It also received one of the highest scores for cost because PVC pipe and fittings are relatively inexpensive, readily available, and could potentially include reusable or recycled materials. However, fabrication and modification would require substantially more effort from the team. Seal Team 2 would be responsible for creating all openings, threaded sections, cable penetrations, and sealing interfaces while ensuring that each modification remained watertight. Because no prefabricated enclosure or manufacturer-tested sealing system would be available, the custom PVC option would require extensive fabrication and water
+
+#### Decision Matrix
+| Available Products | Water Protection | Temperature / Outdoor Protection | Size | Cost | Ease / Risk of Modification | Total Evaluation |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| ZQ-161407 | 5.00 | 5.00 | 3.75 | 3.33 | 5.00 | 22.08 |
+| H181610HCF-6P-P10 | 5.00 | 5.00 | 3.33 | 1.67 | 3.00 | 18.00 |
+| Personal PVC Housing | 2.50 | 2.50 | 5.00 | 5.00 | 1.00 | 16.00 |
+
+Based on the comparative analysis, the ZQ-161407 was selected as the enclosure that gives Seal Team 2 the strongest overall path toward a successful and protective electrical housing. It provides the best balance between environmental protection, reliability, size, and, most importantly, cost. The H181610HCF-6P-P10 offers many of the same protective qualities as the ZQ-161407 and even includes a clear cover that would allow the team to visually inspect the internal electrical system. However, its significantly higher cost creates too great of a barrier for the project.
+
+The Personal PVC Housing is the most innovative and customizable option considered, but it does not provide enough verified protection against outdoor conditions, making it the weakest overall choice. Its performance would depend heavily on Seal Team 2’s fabrication and sealing methods. Although the Personal PVC Housing may still be useful during the testing and prototyping process, the ZQ-161407 provides the best overall combination of protection, reliability, and cost for Seal Team 2.
+
 ## High-Level Solution
+
+For the Telluric Current Sensor, a wye-configuration of stainless steel rods is used to collect voltage readings from the electric field in the soil. This information is then converted into digital information using an ADC. From there, the data is converted into magnitudes and frequencies using a Fast Fourier Transform algorithm using a Nordic nRF9161 microcontroller that will send serial information to the cellular module on the device that will then transmit the information to the desired parties. This sensor will be weatherized using a ZQ-161407 enclosure and will be powered by an off-the-shelf USB power bank with isolated DC-DC and low-noise LDO post-regulation.
+
 ### Hardware Block Diagram
+
+![Hardware Block Diagram](image-5.png)
+
 ### Operational Flow Chart
+
+![Operational Flow Chart](image-4.png)
+
 ## Atomic Subsystem Specifications
 
 ### Telecommunications Subsystem Specifications:
@@ -1169,23 +1050,114 @@ The PMCS provides visual status indicators mounted externally on the primary enc
 - **SRS-PMCS-007:** All component placement, internal wiring methods, and enclosure designs within the PMCS shall comply with National Electrical Code (NEC) requirements, specifically NFPA 70 Articles 250, 706, and 725 [SS-1].
 
 ## Ethical, Professional, and Standards Considerations
+
+Ethics: 
+- Honest Performance claims: Report detection limits, sensitivity, and failure modes accuratley, not just the best case results. Overstating reliablity on a safety device is a ethical issue. 
+- Fail-Safes: If the power is lost, the battery degrades, or a component fails. The sensor should indicate its own failure rather than producing flase or weak reading.
+- Codes of Ethics: Cite IEEE Code of Ethics, and the NSPE Code of Ethics.
+- Data and Privacy: Logs that transmit across shared grid data should state who owns it and how its protected.
+- Intellectual Property and Attributions: Give credit to prior work and individuals whom helped fairly. 
+- Data Integrity vs. Alarm Fatigue: Sensor data must accurately decouple true earth fault conditions. Misclassifying a telluric wave as noise risks missing genuine dangerous ground fault currents.
+- Affordability and Safety: Reducing cost should not come at the expense of essential safety and reliability. Balance affordability with dependable measurments. 
+
+*Data acquisition electrode constraints:*
+Since testing will be performed near high-tension lines, there are important safety considerations to be investigated. For one, there is a chance of pertubing underground utilties. To avoid this, OSHA 29 CFR 1926.651(b) requires that the utility owner is contacted before any excavating occurs, and Tennessee’s Underground Utility Damage Prevention Act (TCA 65-31-101) requires everyone who digs to contact Tennessee 811 at least three (3) working days’ notice before starting a project [SG1], [SG2]. The testing location should also be verified on what is permitted within the right-of-way, as per TVA’s Transmission Right of Way team [SG3]. To also prevent electric shock or similar injuries during installation, it is recommended by OSHA 1910.333(c)(6) to minimize the hazard through implementation of work practice such as handling techniques and insulation [SG4]. Beause of this, personal protective equipment and proper insulation should be diligently inspected, with these ratings given by 29 CFR 1926.97 and OSHA 29 CFR 1926.957, respectively [SG5], [SG6].
+
+##### Telecommunication Subsystem Constraints
+
+*Independently designed transmitter constraints:*
+All wireless transmitters must adhere to the authorization constraints enumerated in the FCC 47 CFR section 2.911 document. In particular, any independently constructed RF transmitter/Receiver network in need of authorization "shall be submitted in writing to a Telecommunication Certification Body (TCB) in a manner prescribed by the TCB." \[4\]. Other sections of Part 2 of FCC 47 CFR, notably, 2.1033, 2.1046, and 2.1057 must be considered when designing a transmitter that meets the federal frequency and bandwidth regulations. These legal constraints on transmitter design makes it favorable to choose an already approved (commercial) device for the transmitter.
+
+*Integrated commercial transmitter/modem constraints:*
+When integrating a commercial transmitter into a communication module, the design of the communication module should adhere to the *FCC KDB 996369 D01: Transmitter Module Equipment Authorization Guide* \[5\]. As a consequence, if the design of the transmitter of the Ground Fault Sensor incorporates a commercial device, there are still legal requirements that need to be considered.
+
+*Use of Public Mobile Services Constraints*
+When designing a transmitter to a cellular network, *FCC CFR 47 Part 22* provides limits for frequencies and effective radiated power. Section 22.352 also goes into interference protection protocols as well \[6\]. This constraint limits the available bandwidth and power output of the transmitter of the Ground Fault Sensor in the case of using a cellular communication architecture.
+
+##### Microcontroller Subsystem Constraints
+    
+Since the microcontroller will be directly wired to the data acquisition unit, it would be regulated under Supbpart B of Title 47 of the FCC. Under Title 47 of the FCC, the microcontroller would be considered a Class A digital device, which is a device used for industrial and commercial use. Since it would also emits radio frequencies as a byproduct of the function of its clock mechanism, the microcontroller would be considered an unintentional radiator. Because of this, it is regulated as an unintentional radiator, it requires authorization such as the Supplier's Declaration of Conformity to ensure it abides the FCC before it can be marketed \[7\].
+
+Effective December 23, 2027, there will be a procurement ban on products using semiconductors sourced from blacklisted entities due to Section 5949 of the James M. Inhofe National Defense Authorization Act for Fiscal Year 2023 \[8\]. This could be a negligible constraint since it would only affect the market for U.S. federal government.
+
+There are additional regulations pertaining to ensuring cybersecurity of the components being connected to the power grid. The North American Electric Reliability Corporation, also known as NERC, requires that security procedures are implemented for the reliable operation and security of the Bulk Electrical System. Under Section B 1.2.5, it requires that any software used for the MCU is verified to comply with strict cyber security standards to ensure power grid safety \[9\].
+
+Since the microcontroller is apart of a larger fault detection apparatus, it is required by the IEEE Guide for Testing Faulted Circuit Indicators (495-2025) in Section 4 to having an operating condition of -40&degC to 85&degC \[10\].
+
+IEEE 1613 pertains to the testing and environmental requirements of communication devices with electric power apparatus applications. for  this system deals with fault detection, the microcontroller will experience voltage surges. To increase the practicality of the device, meeting Class 1 standards in IEEE 1613 allows the device to experience temporary error as long as the device has a self-recovery system \[9\].
+
+There is also IEEE 1613.1 that is related to transmission and distribution applications. In this document, it defines Zone B as facility with equipment outside of an enclosed area. For our purposes, the MCU would need to be prepared for Zone B use, meaning that the environmental standards due to being outside of a boundary or fenced are \[11\].
+
+IEC-61010-1 pertains to category ratings for safety requirements of equipment used for measurement, among other uses. Since the MCU will be used for monitoring power systems, it would need to be a CAT IV rating, which requires transient protection level up to 12 kilovolts \[12\]. Because of this requirement, protection of the microcontroller will be paramount.
+
+##### Power System Constraints
+
+*Voltage Regulation:* The power distribution and regualtion stages must maintain a tight DC voltage tolerances with minimal ripple to prevent high frequency noise[13].
+
+*Transient and Surge Handling:* The system must absorb rapid load steps and isolate the system from external voltage spikes or lightning surges via proper supercapacitor  buffering[14].
+
+*Electrical and Isolation:* The analog and processing unit must maintain galvanic isolation to prevent high Ground Potential Rise and faults from damaging downstream  circuitry or creating ground loops \[15\], \[16\].
+
+*Power Budget:* Desinged for remote, unattended deployment the systems power must be minimized to ensure the hybrid storage can sustain operation[3].
+
+*Financial:* The total Bill of Materials needs to reamin with limits while using reliable components. 
+
+###### Legal Constraints
+
+**Regulatory and Safety Codes:** All internal wiring, power distribution, and grounding must strictly comply with NEC (NFPA 70) requirements, specifically Article 250 (Grounding and Bonding), Article 690 (Solar PV Systems), Article 706 (Energy Storage Systems), and Article 725 (Low-Voltage Control Circuits) [SS-1].
+
+**Thermal and Chemical Limitations:** Battery charging and discharging parameters must respect chemical limits (preventing lithium or thermal runaway under NFPA 855 guidelines) [SS-2].
+
+ **Geographical and Site Restrictions:** Field deployment requires correct physical orientation and spacing of sensing probes relative to local telluric vectors to help with meaningful data collection.
+
+###### Applicable Standards and Design Implementation
+
+To ensure safe operation, signal integrity, and regulatory compliance across environments ranging from field sites to high-voltage substations, the power subsystem incorporates design criteria from the following key engineering codes and standards:
+
+| Standard / Code | Title / Focus Area | Applicable Subsystem / Aspect | Design Integration and Incorporation Strategy | Target Verification Metric |
+|---|---|---|---|---|
+| **NEC (NFPA 70) Art. 250** | Grounding & Bonding | Power Distribution & Chassis | Single-point reference grounding; metallic chassis bonded to earth reference. | Chassis ground resistance under $0.1\,\Omega$ |
+| **NEC (NFPA 70) Art. 690** | Solar PV Systems | Auxiliary Solar / MPPT Stage | Overcurrent protection inline with PV feed; rated wire sizing and terminal isolation. | Fuse and wire sizing matches NEC ampacity limits |
+| **NEC (NFPA 70) Art. 706** | Energy Storage Systems | Battery & Supercap Storage | Fused battery connections, polarity protection, and physical isolation within enclosure. | Fuse clearing and safe battery disconnect verified |
+| **NEC (NFPA 70) Art. 725** | Class 1, 2, & 3 Remote-Control / Power-Limited | Low-Voltage Power Rails | Physical segregation of low-voltage DC signals ($3.3\text{V}/5\text{V}$) from high-voltage interfaces. | Minimum $6.3\text{ mm}$ PCB trace clearance |
+| **NFPA 855** | Stationary Energy Storage Safety | Battery Management & Storage | Pre-certified USB battery bank with thermal shutdown; firmware temperature monitoring. | Thermal cutoff active at ≥55 °C during charging and ≥60 °C during operation |
+| **IEEE Std 80** | Safety in AC Substation Grounding | Enclosure & Ground Probes | Galvanic isolation barrier prevents Substation Ground Potential Rise (GPR) from damaging microcontrollers. | Withstands $2\text{ kV}_{\text{RMS}}$ Hi-Pot test for 60 seconds |
+| **IEEE Std 4** | High-Voltage Testing Techniques | Input Power Protection | Transient Voltage Suppressor (TVS) diodes and isolation barrier designed for surge withstand. | Withstands $3\text{ kV}$ transient impulse surge |
+| **IEEE Std 1100** | Powering & Grounding Sensitive Electronics | Analog Front-End (AFE) Rails | Low-noise LDO filtering and isolated DC-DC converter prevent noise coupling into sensitive telluric band. | Noise floor under $10\,\mu\text{V}_{\text{RMS}}$ ($0.01\text{ Hz} - 100\text{ Hz}$) |
+| **IEEE Std 1547** | DER Interconnection & Interoperability | Substation Control Interfacing | Defines isolation and power quality bounds when interfacing with utility grid buses. | Fault-free operation during grid disturbances |
+| **IEEE Std C37.91** | Protective Relaying for Transformers | Substation Sensor Placement | Structural shielding and transient clamping to withstand transformer magnetic fields and fault currents. | Uninterrupted function during high EMF exposure |
+| **USB 2.0 / USB-C PD Spec** | USB Power & Delivery Standard | Primary Field Input (VBUS) | Standardized 5 V DC intake interface using commercial USB power banks and wall adapters. | Voltage stable within $4.75\text{V} - 5.25\text{V}$ under load |
+
 ## Resources
 ### Budget
+
+Upon conversing with the rest of Seal Team 2, it has been established that weatherproofing will be granted  a max of  40% of the budget. ($400 of a 1000$ budget) This is deemed to be fair due to the fact that the weatherproofing needs external materials to create a safe, functional, and reliable weatherproofing system. 
+Breakdown of Max Spending Potential:
+•	$200 of the NEMA rated box
+•	$100 of Installation products and appliances
+•	$100 PVC equipment and miscellaneous spending on modifications
 
 Telecommunication/MCU Subsystem Bill of Materials:
 
 Nordic Semiconductor nRF9160: $179.80
 Alternative SIM option (TBD) (Potential options: 1NCE: $14/10yrs, Hologram: $1/mo)
 
-### Division of Labor
+Power System Bill of Materials:
 
+-Analog Devices / Linear Technology LT3042 (Ultra-Low-Noise, High-PSRR LDO):** Placed downstream to reduce remaining ripple ($4.00).
+-Littelfuse 313 Series / Bussmann Waterproof Inline Fuse Holders:** Overcurrent protection required by NEC Articles 240 and 706 ($3.00).
+-Anker, "Anker Power Bank (20,000mAh, 22.5W, Built-In USB-C Cable) ($60.00).
+-RECOM / Murata 1 W Isolated DC-DC Converter Module:** Compact board-mount module providing galvanic isolation to eliminate ground loops ($8.00–$12.00).
+
+
+### Division of Labor
 Provided below is Seal Team 2's division of labor for the 5 subsystems of the Telluric Current Sensor:
 
 **Seth Strahan - Power Subsystem:** Due to Seth Strahan's experience working with power system safety at ORNL and his extensive power system related courework at Tennessee Technological University, Seal Team 2 unanimously voted for Seth Strahan to take the specifications for the power subsystem and generate a solution in the Power Subsystem Detailed Design Document.
 
 **Alex Bailey - DAQ Subsystem:** Due to Alex Bailey's extensive research history in Electromagnetic Fields, and, in particular, telluric currents, Seal Team 2 unanimously voted for Alex Bailey to take the specifications for the DAQ Subsystem and generate a solution in the DAQ Subsystem Detailed Design Document.
 
-**Mark Myers - Weatherization Subsystem:** Due to Mark Myers' experience in manufacturing processes at his previous job, Aladdin, Seal Team 2 unanimously voted for Mark Myers to take the specifications for the Weatherization Subsystem and generate a solution in the Weatherization Subsystem Detailed Design Document.
+**Mark Myers - Weatherization Subsystem:** Due to Mark Myers' experience in manufacturing processes at his previous job, Aladdin Temp-Rite, Seal Team 2 unanimously voted for Mark Myers to take the specifications for the Weatherization Subsystem and generate a solution in the Weatherization Subsystem Detailed Design Document.
 
 **Silas Garmon - MCU Subsystem:** Due to Silas Garmons' coursework in computer science and microcomputer systems at Tennessee Technological University, Seal Team 2 unanimously voted for Silas Garmon to take the specifications for the MCU subsystem and generate a solution in the MCU Subsystem Detailed Design Document.
 
@@ -1193,17 +1165,14 @@ Provided below is Seal Team 2's division of labor for the 5 subsystems of the Te
 
 ### Timeline
 
+![Gantt Chart Again](image-3.png)
+
 ## References
 
 [MW.1] Semtech Corporation, “LoRa Technology Overview.” [Online]. Available: https://www.semtech.com/lora. [Accessed: Oct. 23, 2026].
+
 [MW.2] “TTN Coverage Heatmap.” [Online]. Available: https://ttnmapper.org/heatmap/. [Accessed: Oct. 23, 2026].
-[MW.3] Espressif Systems, “ESP32-WROOM-32E and ESP32-WROOM-32UE Datasheet.” [Online]. Available: https://documentation.espressif.com/
-esp32-wroom-32e_esp32-wroom-32ue_datasheet_en.html. [Accessed: Oct. 23, 2026].
-[MW.4] M. Woolley, “Bluetooth Low Energy Primer.” Bluetooth SIG. [Online]. Available: https://www.bluetooth.com/bluetooth-le-primer/. [Accessed: Oct. 23, 2026].
-[MW.5] Quectel Wireless Solutions Co., Ltd., “BG95 Series QuecOpen Hardware Design,” Ver. 1.3. [Online]. Available: https://images.quectel.com/python/sites/2/2023/05/Quectel_BG95_Series_QuecOpen_Hardware_Design_V1.3.pdf. [Accessed: Oct. 23, 2026].
-[MW.6] M5Stack, “Unit CatM.” [Online]. Available: https://docs.m5stack.com/en/unit/Unit_CatM. [Accessed: Oct. 23, 2026].
-[MW.7] Quectel Wireless Solutions Co., Ltd., “BG95 Series LPWA Specification,” Ver. 2.0, Nov. 2024. [Online]. Available: https://developer.quectel.com/en/wp-content/uploads/sites/2/2024/11/Quectel_BG95_Series_LPWA_Specification_V2.0.pdf. [Accessed: Oct. 23, 2026].
-## Contributions
+
 
 1. [SS-1] National Fire Protection Association, NFPA 70: National Electrical Code, Quincy, MA: NFPA, 2026.
 2. [SS-2] National Fire Protection Association, NFPA 855: Standard for the Installation of Stationary Energy Storage Systems, Quincy, MA: NFPA, 2026.
@@ -1226,7 +1195,7 @@ esp32-wroom-32e_esp32-wroom-32ue_datasheet_en.html. [Accessed: Oct. 23, 2026].
 19. [SS-19] Harbor Freight Tools, "Bauer 20V 3.0 Ah Lithium-Ion Slide Battery," Harbor Freight [Online]. Available: https://www.harborfreight.com/ (accessed Oct. 20, 2026).
 20. [SS-20] Anker, "Anker Power Bank (20,000mAh, 22.5W, Built-In USB-C Cable) Product Specifications and Pricing," Anker Innovations [Online]. Available: https://www.anker.com/ (accessed Oct. 20, 2026).
 21. [SS-21] RECOM Power, ROE-0505S 1W SIP4 Isolated DC-DC Converter Datasheet, RECOM Power, Gmunden, Austria, 2022.
-22. [SS-22] Analog Devices, LT3042 20V, 200mA, Ultralow Noise, Ultrahigh PSRR RF Linear Regulator Datasheet, Analog Devices, Norwood, MA, Rev. C, 2023.
+22. [SS-22] Analog Devices, LT3042 20V, 200mA, Ultralow Noise, Ultrahigh PSRR RF Linear Regulator Datasheet, Analog Devices, Norwood, MA, Rev. C, 2023.[MW.3] Espressif Systems, “ESP32-WROOM-32E and ESP32-WROOM-32UE Datasheet.” [Online]. Available: https://documentation.espressif.com/
 
 [SG11] "IEEE Standard for Testing Faulted Circuit Indicators," in IEEE Std 495-2025 (Revision of IEEE Std 495-2007) , vol., no., pp.1-26, 27 Feb. 2026, doi: 10.1109/IEEESTD.2026.11415435.
 keywords: {IEEE Standards;Cables;Fault diagnosis;Circuit stability;Circuit testing;cable fault locator;fault indicators;faulted circuit indicator;FCI;IEEE 495 (TM)},
@@ -1248,4 +1217,66 @@ keywords: {IEEE Standards;Cables;Fault diagnosis;Circuit stability;Circuit testi
 [SG8] NetBurner, “SOMRT1061 and Teensy 4.1 Comparison,” NetBurner. [Online]. Available: https://www.netburner.com/somrt1061-and-teensy-4-1-comparison/. [Accessed: Oct. 22, 2026].
 [SG9] Particle, “Cellular Data Guide,” Particle Documentation. [Online]. Available: https://docs.particle.io/getting-started/billing/cellular-data/. [Accessed: Oct. 8, 2026].
 
+
 [SG10] P. Kumar, “Teensy 4.1: The 600 MHz Microcontroller That Feels Like a Tiny Computer,” PiEV Core, Aug. 17, 2026. [Online]. Available: https://pievcore.com/insights/teensy-41-the-600-mhz-microcontroller-that-feels-like-a-tiny. [Accessed: Oct. 22, 2026].
+esp32-wroom-32e_esp32-wroom-32ue_dateasheet_en.html. [Accessed: Oct. 23, 2026].
+
+CS. [SS-13:] 
+Texas Instruments, BQ25713 Buck-Boost Charge Controller IC Datasheet, Texas Instruments, Dallas, TX, Rev. C, 2021.
+
+[Christopher Wolk:G6] Raspberry Pi Ltd., “Raspberry Pi Pico 2 Datasheet,” [Online]. Available: https://pip-assets.raspberrypi.com/categories/1005-raspberry-pi-pico-2/documents/RP-008299-DS-2-pico-2-datasheet.pdf. [Accessed: Oct. 21, 2026].
+
+[SG7] PJRC, “Teensy® 4.1 Development Board,” PJRC. [Online]. Available: https://www.pjrc.com/store/teensy41.html#power. [Accessed: Oct. 21, 2026].
+
+[SG8] NetBurner, “SOMRT1061 and Teensy 4.1 Comparison,” NetBurner. [Online]. Available: https://www.netburner.com/somrt1061-and-teensy-4-1-comparison/. [Accessed: Oct. 22, 2026].
+[SG9] Particle, “Cellular Data Guide,” Particle Documentation. [Online]. Available: https://docs.particle.io/getting-started/billing/cellular-data/. [Accessed: Oct. 8, 2026].
+
+[SG10] P. Kumar, “Teensy 4.1: The 600 MHz Microcontroller That Feels Like a Tiny Computer,” PiEV Core, Aug. 17, 2026. [Online]. Available: https://pievcore.com/insights/teensy-41-the-600-mhz-microcontroller-that-feels-like-a-tiny. [Accessed: Oct. 22, 2026].
+
+\[TT\] T. Tamai, "Growth of oxide films on the surface of Cu contact and
+its effect on the contact resistance property," *Electronics and
+Communications in Japan (Part II: Electronics)*, vol. 72, no. 7, pp.
+87--93, 1989, doi: [10.1002/ecjb.4420720710
+](https://doi.org/10.1002/ecjb.4420720710).
+
+\[CS\] "The chemistry of copper patination," *Corrosion Science*, 1998.
+\[Online\]. Available:
+[https://www.sciencedirect.com/science/article/pii/S0010938X98000936
+](https://www.sciencedirect.com/science/article/pii/S0010938X98000936).
+
+\[CO\] C.-O. A. Olsson and D. Landolt, "Passive films on stainless
+steels---Chemistry, structure and growth," *Electrochimica Acta*, vol.
+48, no. 9, pp. 1093--1104, 2003, doi: [10.1016/S0013-4686(02)00841-1
+](https://doi.org/10.1016/S0013-4686(02)00841-1).
+
+\[CS2\] "Effect of alloying elements on the contact resistance and the
+passivation behaviour of stainless steels," *Corrosion Science*, vol.
+44, no. 4, pp. 635--655, 2002, doi: [10.1016/S0010-938X(01)00107-X
+](https://doi.org/10.1016/S0010-938X(01)00107-X).
+
+\[FC\] F. H. Constable, "Electrical conductivity of copper oxide films
+showing interference colours," *Nature*, vol. 136, p. 517, Sep. 1935,
+doi: [10.1038/136517a0
+](https://doi.org/10.1038/136517a0).
+
+\[FCE\] "Metal Price Chart --- \$/lb Today," *FabCostEstimator*. Accessed:
+Oct. 20, 2026. \[Online\]. Available:
+[https://fabcostestimator.com/metal-prices
+](https://fabcostestimator.com/metal-prices)
+
+\[AH\] A. Helmenstine, "Table of Electrical Resistivity and
+Conductivity," *Science Notes*. Accessed: Oct. 20, 2026. \[Online\].
+Available:
+[https://sciencenotes.org/table-of-electrical-resistivity-and-conductivity/
+](https://sciencenotes.org/table-of-electrical-resistivity-and-conductivity/)
+
+
+[def]: <Operational Flow Chart.png> 
+
+## Contributions
+
+Alexander Bailey: Comparative Analysis of Solutions, Operational Flow Chart, Atomic Subsystem Specifications, References
+Silas Garmon: Comparative Analysis of Solutions, Atomic Subsystem Specifications, High Level Solution, Ethical Considerations, References
+Mark Myers: Comparative Analysis of Solutions, Atomic Subsystems Specifications, Budget, References
+Seth Strahan: Comparative Analysis of Solutions, Atomic Subsystem Specifications, Budget, References
+Chrisopher Wolk: Fully Formulated Problem, Hardware Block Diagram, Atomic Subsystem Specifications, Comparative Analysis of Solutions, Budget, Division of Labor, References
