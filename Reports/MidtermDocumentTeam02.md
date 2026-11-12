@@ -1517,7 +1517,7 @@ The high level design solution of the TC-GFI is as follows: a wye-configuration 
 
 ### Hardware Block Diagram
 
-![Wireless Fault Current Indicator Diagram](Wireless%20Fault%20Current%20Indicator%20Diagram%20%281%29.png)
+![Wireless Fault Current Indicator Diagram](hardrockdiagram.jpeg)
 
 ### Operational Flow Chart
 
