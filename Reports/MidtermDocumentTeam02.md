@@ -1516,7 +1516,7 @@ For the TC-GFI, a wye-configuration of stainless steel rods is used to collect v
 
 ### Hardware Block Diagram
 
-![Wireless Fault Current Indicator Diagram](Wireless%20Fault%20Current%20Indicator%20Diagram%20%281%29.png)
+![Wireless Fault Current Indicator Diagram](hardrockdiagram.jpeg)
 
 ### Operational Flow Chart
 
