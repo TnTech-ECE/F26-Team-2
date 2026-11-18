@@ -1,0 +1,27 @@
+Attendees: Silas Garmon, Mark Myers, Seth Strahan, Christopher Wolk
+
+With Jacob McMurray 
+Alexander Bailey called in to discuss some
+
+Meeting Start: 1:03pm
+
+-Jacob wants a device that specifically analyzes 60, 180, and 540 Hz. Potentially find resistivity of the ground between the two rods and use this to calculate current readings.
+- Alex called in. distance of transmission, rate of health check-ins, and what health looks like (load/voltage/current balance, magnitude and direction of current density), how long after fault to pinpoint it, energy consumption rate, minimum threshold voltage, minimum/maximum fault detection distance, clarify this system is detecting ground fault current indication and not line-to-line
+
+Jacob wants:
+- True RMS 1%
+- Test bed with to test these items with controlled 120V , ground fault, 
+- cost less than 100 dollars a year to run
+- Replace battery less than 3 times a year (on site)
+- Send up to 20th harmonic or Highest Harmonic that registers 5% THD (current or voltage
+- Power quality analysis using neutral current (?)
+- Goal to have proof of concept for Jacob 
+- Jacob specificalyl wants narrowbnad IoT
+- If spike or certain noise floor level of THD,
+- If idle at heartbeat, send information every hour 
+~~- If downed power line, time ten minutes to send a ten minute package before transmitting another data. Cooldown period (?). At necessary operation, have a ten minute packet of the information sampled with first two minutes higher sampling rate.~~ Review
+~~- Higher sampling rate during event trigger (stretch goal) with first minute~~ Review
+- 1 minute package for first ten minutes
+- Crest factor & form factor (Dr. Matthews buzzwords)
+
+Meeting End: 2:01pm
