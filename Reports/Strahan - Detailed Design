@@ -1,15 +1,1 @@
-# **Detailed Design - Power Management and Conditioning Subsystem (PMCS)**
---------------------------------------------------------------------------
-The Power Management and Conditioning Subsystem (PMCS) is responsible for supplying stable, uniterrupted electrical energy to all operatinal compnents and peripherals of the Telluric Current Ground Fault Indicator (TC-GFI).
-Its primary function is to accept, isolate, condition, and distribute the electrical power required by the microcontroller, telecommunication module, data acquisition system (DAQ), and active analog front-end components. 
-This subsystem ensures that each interanl load receives power at the correct voltage level while maintaining exceptional electrical isolation and minimal noise to protect sensitive microvolt-levle earth potential 
-measurements. 
 
-At a high level, the PMCS accepts unconditionoed power from an external 5 V DC source, such as the Voltaic Systems V75 "Always-On" recharable power bank, with axuliary off-grid charging provided by the plug in 
-6 W monocrystalline solar panel. Once energy is delivered to the internal power condtioning network, it is routed through certified board-mount isolated DC_DC converter (RECOM/Murata 1W SIP4) that establishes a 
-reinforced 2 kV glavanic isolation barrier. This barrier is critical to eliminate earth ground loops and protect the downstream instrumentation from the high Ground Potential Rise (GPR) and the transienet surges 
-experienced when operating in high-voltage substaion enviroments.
-
-Following isolation the power network converts and condtions energy into independent regulated digital and ultra-low-noise analog power rails using high-PSRR linear post-regulators (Analog Devices LT3042). 
-These rails power all necessary computational and sensing componenets, ensuring stable voltage conditions and suppressing high-frequency switching ripple below 10&micro;V<sub>RMS even during heavy active LTE transmission 
-load steps. 
