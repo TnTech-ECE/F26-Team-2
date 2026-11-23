@@ -25,7 +25,7 @@ The Power Management and Conditioning Subsystem (PMCS) is controlled by specific
     - Rationale: Negotiated as void with Dr. Van Neste due to complexity; replaced by the Voltaic V75 "Always-On" power bank and 6 W solar panel architecture.
 - TCS-PS4 (Low-Noise Regulators & LDOs): Regulator and LDO outputs shall meet low-noise requirements so no measurable power supply noise leaks into the sensor's bandwidth.
     - Rationale: Telluric measurements rely on small voltage readings where supply ripple or switching harmonics can degrade harmonic FFT.
- 
+
 **2. Power Subsystem Metrics and Rationale:**
 - SR-01 (Output Regulation): The power distribution board shall provide regulated DC outputs of 3.3 V and 5 V within ± 2% voltage regulation tolerance under all operating load steps.
     - Rationale: Rail regulation keeps digital logic, data acquisition stages, and conditioning circuits within reliable operating limits.
@@ -37,5 +37,52 @@ The Power Management and Conditioning Subsystem (PMCS) is controlled by specific
     - Rationale: Multi-month autonomy reduces field maintenance visits and aligns with maintenance goals.
 - SR-05 (Transient Response): The regulation and post-regulation stages shall maintain voltage stability and limit transient sags to less than 5% during sudden microcontroller loads.
     - Rationale: Microcontroller wakeups and cellular transmission bursts create rapid current steps that could cause brownouts or resets without adequate transient response.
-- SR-06 (Regulatory Compliance): Power subsystem component placement, wiring methods, and energy storage enclosures shall comply with applicable NEC Articles 250, 690, and 725 requirements, and energy storage shall use a battery pack with UL 2056 / UL 1642 certification and a hardware BMS.
-    - Rationale: Certified lithium storage with a hardware BMS and code-aligned wiring mitigates thermal runaway, short-circuit, and shock hazards during unattended outdoor operation. 
+- SR-06 (Regulatory and Battery Safety Alignment): Power subsystem component placement, wiring methods, and energy storage integration shall use relevant NEC design guidance (Articles 250, 690, and 725) and use a commercial battery pack with an integrated hardware Battery Management System (BMS). While UL 2056 and UL 1642 were initially referenced to capture lithium cell and power-bank safety expectations, they are no longer used as requirements here because documentation on the selected Voltaic Systems V75 pack identifies UN 38.3, IEC 62133, CE, and FCC rather than UL 2056 or UL 1642.
+    - Rationale: UL 2056 and UL 1642 were originally included during early specification planning as familiar safety benchmarks for a 72 Wh lithium power bank, but moving away from them keeps the specification tied to known hardware ratings (IEC 62133, UN 38.3, CE, FCC, and internal BMS protections) and practical capstone scope. The UL 1642 applies to individual lithium cells and UL 2056 applies to standalone power banks, not to custom external circuitry or an entire field measurement system; if the TC-GFI were ever commercialized, safety evaluation would extend beyond just the power bank it would evaluate the finished equipment assembly and utility/environmental requirements. Using NEC Articles 250, 690, and 725 as design references supports clean ground-reference separation, inline DC/solar overcurrent protection, and physical spacing across low-voltage and isolated regions.
+
+**3. PMCS Subsystem Requirements and Rationale:**
+- SRS-PMCS-001 (5 V Input Compatibility): The PMCS shall accept standard 5 V DC power inputs from the Voltaic V75 USB battery pack or a compatible USB supply (wall adapter or laptop port).
+    - Rationale: Standard 5 V USB intake supports transition between field battery power and laboratory/bench testing supplies.
+- SRS-PMCS-002 (Input-to-Analog Ground Isolation): The PMCS shall incorporate a galvanic isolation barrier between the external power input ground and the internal instrument analog ground.
+    - Rationale: Separates external supply ground disturbances and ground loops from sensitive analog measurement reference nodes.
+- SRS-PMCS-003 (Regulated DC Rails): The PMCS shall supply stable DC voltage rails suitable for powering digital microcontrollers and analog signal conditioning circuitry under standard operating loads.
+    - Rationale: Downstream MCU, telemetry, and DAQ depend on clean, properly sized voltage rails to operate reliably.
+- SRS-PMCS-004 (Ripple Filtering): The PMCS power conditioning circuitry shall utilize passive or active filtering to reduce switching ripple and high-frequency noise on the analog supply rail.
+    - Rationale: Pre-conditioning helps strip high-frequency switching artifacts before sensitive post-regulation and analog sensing stages.
+- SRS-PMCS-005 (High-PSRR Linear Post-Regulation): The PMCS shall utilize linear post-regulation with a high Power Supply Rejection Ratio (PSRR) to isolate sensitive measurement components from upstream supply fluctuations.
+    - Rationale: High-PSRR post-regulation helps to contain the switching ripple down to microvolt levels on the analog rail.
+- SRS-PMCS-006 (Supply Health Monitoring): The PMCS shall provide a monitoring interface to allow the system microcontroller to track incoming supply health or battery status.
+    - Rationale: Enables battery/supply visibility and supports fail-safe status reporting rather than silent power degradation.
+- SRS-PMCS-007 (NEC Compliance): All component placement, internal wiring methods, and enclosure designs within the PMCS shall comply with National Electrical Code (NEC) requirements, specifically NFPA 70 Articles 250, 690, and 725.
+    - Rationale: Establishes safe grounding/bonding, solar PV circuit protection, and low-voltage circuit segregation.
+- SRS-PMCS-008 (Pass-Through Solar Charging): The PMCS shall continue to supply regulated output rails without interruption or reset while the P106-S solar panel recharges the battery pack.
+    - Rationale: Prevents measurement gaps or telemetry dropouts during daytime solar recharging.
+- SRS-PMCS-009 (Subsystem Load Support): The PMCS shall support the load pulled by the Telecommunication, MCU, Microcontroller, and Data Acquisition systems.
+    - Rationale: Ensures all active subsystems receive required current without starving or overloading the power stage.
+
+**4. Power System Constraints:**
+- Voltage Regulation & Noise: Distribution and regulation stages must hold tight DC tolerances with low ripple to prevent high-frequency noise from interfering with measurements.
+  - Rationale: Protects microvolt-scale telluric signals and FFT harmonic accuracy.
+- Transient & Surge Handling: The system must handle rapid load steps and protect against external voltage spikes or surges.
+  - Rationale: Preserves hardware reliability during load transitions and outdoor transient events.
+- Electrical Isolation: Analog and processing stages must maintain a $2\,\text{kV}$ galvanic isolation barrier to prevent high Ground Potential Rise (GPR), fault damage, and ground loops.
+  - Rationale: Substation proximity creates elevated ground potential and loop risks.
+- Power & Financial Budgets: Power draw must be minimized for remote unattended operation (targeting ~90-day runtime), and BOM cost must stay within subsystem/project limits ($1,000 system cap, $100/year operating target, with power maintenance budgeted within limits).
+  - Rationale: Satisfies socio-economic and budget constraints and keeps the unit practical for rural utility cooperatives and research deployment.
+- Environmental & Site Conditions: The system must operate across Cookeville, TN temperature extremes ($-30^\circ\text{C}$ to $41^\circ\text{C}$ per TCS-WS2, with enclosure thermal rise and the Voltaic V75's $0^\circ\text{C}$ to $45^\circ\text{C}$ charge and $-15^\circ\text{C}$ to $60^\circ\text{C}$ discharge cutoffs accounted for) and follow site orientation and safety rules.
+  - Rationale: Seasonal weather swings and field installation conditions directly affect battery behavior, cold-weather solar charging limits, thermal margins, and signal quality.
+- Legal, Thermal, and Chemical Constraints: Wiring, grounding, and energy storage integration shall apply relevant NEC design guidance (Articles 250, 690, and 725) and rely on a commercial battery pack with an integrated hardware BMS and documented IEC 62133 and UN 38.3 ratings rather than uncertified custom cells or formal UL 2056 / UL 1642 certification (which are not required for this capstone prototype; NEC Article 706 and NFPA 855 thresholds are noted as non-applicable due to the ~72 Wh pack size).
+  - Rationale: Aligns the prototype with verifiable battery safety/transport ratings and practical electrical design references while mitigating lithium thermal, short-circuit, and electrical hazards.
+
+**5. PMCS Codes and Standards Table:**
+| Code / Standard | Role in PMCS Detailed Design | How the PMCS Designs to Fit It |
+| :--- | :--- | :--- |
+| **IEC 62133-2 & UN 38.3** | Battery safety & transport reference | Use pre-built Voltaic V75 pack with internal BMS; observe 0 °C to 45 °C charge and -15 °C to 60 °C discharge cutoffs. |
+| **NEC Art. 690** | Solar/DC wiring & fuse guidance | Add 1.5 A inline overcurrent fusing, proper wire/connector ratings, and solar input limits (P106-S into V75). |
+| **NEC Art. 250** | Grounding/bonding reference | Document `AGND` vs. `GND` single-point reference (no metal box chassis on ZQ-161407) and verify reference continuity. |
+| **NEC Art. 725** | Low-voltage circuit separation | Keep low-voltage DC/AFE signals segregated from external/field wiring across the isolation boundary. |
+| **IPC-2221 & IEC 60664-1** | PCB clearance & creepage spacing | Maintain a physical PCB isolation moat/slot between `GND` and `AGND` sized for the 2 kV isolation barrier and PD2 environment. |
+| **NEMA 250 / IEC 60529** | Environmental & ingress protection | House the V75 battery pack and PMCS electronics inside a sealed NEMA 6P / IP68 enclosure (ZQ-161407) with weatherproof glands. |
+| **IEEE Std 80** | Substation GPR / isolation reference | Provide 2 kV galvanic isolation across DC-DC and SPI signal paths to prevent GPR damage and ground loops. |
+| **IEEE Std C62.41** | Surge waveform reference | Apply input surge/TVS clamping (`SMBJ5.0A`) and current limiting ahead of the isolation barrier; avoid calling it a certification. |
+| **IEEE Std 1100** | Sensitive analog power/grounding | Use LC Pi-filtering and LT3042 high-PSRR LDO to keep analog rail noise under 10 µV RMS across the telluric band. |
