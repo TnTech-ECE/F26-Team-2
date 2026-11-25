@@ -86,3 +86,12 @@ The Power Management and Conditioning Subsystem (PMCS) is controlled by specific
 | **IEEE Std 80** | Substation GPR / isolation reference | Provide 2 kV galvanic isolation across DC-DC and SPI signal paths to prevent GPR damage and ground loops. |
 | **IEEE Std C62.41** | Surge waveform reference | Apply input surge/TVS clamping (`SMBJ5.0A`) and current limiting ahead of the isolation barrier; avoid calling it a certification. |
 | **IEEE Std 1100** | Sensitive analog power/grounding | Use LC Pi-filtering and LT3042 high-PSRR LDO to keep analog rail noise under 10 µV RMS across the telluric band. |
+
+#**Overview of Proposed Solution**
+--- 
+The PMCS for the TC-GFI delivers conditioned, galvanically isolated, and low noise DC power to both the digital and analog telluric measurement front-end while supporting multi month unattended field operations. Instead of using a custom high-voltage conversion or raw lithium cells, the proposed architecture pairs a commercial pass through solar/battery power source with a single board conditioning and isolating stage housed inside a sealed NEMA 6P/IP68 enclosure (ZQ-161407). 
+
+**1. Architecture Strategy
+To protect micro-volt telluric signals from the digital switching noise and prevent ground loops or Ground Potential Rise (GPR) near substation testing from in accurate measurements. The PMCS will use a split system for the isolated analog front-end and the non-isolated digital/telemetry side.
+- **Energy Harvesting and Storage Front-End**: A Voltaic Systems P106-S 6W / 6V solar panel feeds pass-through charging into a Voltaic Systems V75 "Always-On" lithium-ion power bank (20,100 mAh / 72 Wh) with built in BMS (IEC 62133 / UN 38.3) Using an "Always-On" pack such as the V75 prevents low current shut off during microamp/milliamp sleep windows while keeping the TC-GFI withing budget and safety limits.
+- **Primary Input Protection:** The V75's 5 V output enters the PMCS through a 1.5 A inline fuse, and SMBJ5.0A TVS diode for transient/surge clamping, and bulk decoupling (47 µF electrolytic & 0.1 µF ceramic) to stabilize load steps and feed the non-isolated digital/telemetry side (GND). 
