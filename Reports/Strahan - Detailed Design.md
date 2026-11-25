@@ -87,11 +87,65 @@ The Power Management and Conditioning Subsystem (PMCS) is controlled by specific
 | **IEEE Std C62.41** | Surge waveform reference | Apply input surge/TVS clamping (`SMBJ5.0A`) and current limiting ahead of the isolation barrier; avoid calling it a certification. |
 | **IEEE Std 1100** | Sensitive analog power/grounding | Use LC Pi-filtering and LT3042 high-PSRR LDO to keep analog rail noise under 10 µV RMS across the telluric band. |
 
-#**Overview of Proposed Solution**
+# **Overview of Proposed Solution**
 --- 
 The PMCS for the TC-GFI delivers conditioned, galvanically isolated, and low noise DC power to both the digital and analog telluric measurement front-end while supporting multi month unattended field operations. Instead of using a custom high-voltage conversion or raw lithium cells, the proposed architecture pairs a commercial pass through solar/battery power source with a single board conditioning and isolating stage housed inside a sealed NEMA 6P/IP68 enclosure (ZQ-161407). 
 
 **1. Architecture Strategy
 To protect micro-volt telluric signals from the digital switching noise and prevent ground loops or Ground Potential Rise (GPR) near substation testing from in accurate measurements. The PMCS will use a split system for the isolated analog front-end and the non-isolated digital/telemetry side.
 - **Energy Harvesting and Storage Front-End**: A Voltaic Systems P106-S 6W / 6V solar panel feeds pass-through charging into a Voltaic Systems V75 "Always-On" lithium-ion power bank (20,100 mAh / 72 Wh) with built in BMS (IEC 62133 / UN 38.3) Using an "Always-On" pack such as the V75 prevents low current shut off during microamp/milliamp sleep windows while keeping the TC-GFI withing budget and safety limits.
-- **Primary Input Protection:** The V75's 5 V output enters the PMCS through a 1.5 A inline fuse, and SMBJ5.0A TVS diode for transient/surge clamping, and bulk decoupling (47 µF electrolytic & 0.1 µF ceramic) to stabilize load steps and feed the non-isolated digital/telemetry side (GND). 
+- **Primary Input Protection:** The V75's 5 V output enters the PMCS through a 1.5 A inline fuse, and SMBJ5.0A TVS diode for transient/surge clamping, and bulk decoupling (47 µF electrolytic & 0.1 µF ceramic) to stabilize load steps and feed the non-isolated digital/telemetry side (GND).
+- **2 kV Galvanic Isolation Barrier:** A RECOM/Murata 1 W 5V-to-5V isolated DC-DC converter with a digital isolator across SPI signal lines establishes a 2 kV galvanic isolation barrier separating non-isolated (GND) from isolated analog (AGND) across a physical PCB slot sized using IPC-2221 and IEC 60664-1.
+- **Ultra-Low-Noise Analog Rail:** On the isolated AGND side the Isolated 5 V rail passes through and LC-PI-Filter (Ferrite bead + 10 µF MLCC) into an Analog Devices LT3042 ultra-low-noise, high PSRR LDO (with a 33 kΩ RSET resistor) to supply clean analog power (< 10 µV RMS ripple) for the precision refrence (ADR441) and ADCs (MCP3460R & AD7352).
+- **Battery / Supply:** A 100 kΩ / 100 kΩ resistor voltage divider will be used to scale the supply voltage into the nRF9151 SAADC input so the system can log battery health and detect low charge or cold weather charging pauses (0 °C to 45 °C charge cutoff; -15 °C to 60 °C discharge cutoff on the V75).
+
+**2. Why the Architecture fits the TC-GFI:**
+- **Noise and Signal Integrity:** Separating GND and AGND and post regulating with the LT3042 after LC filtering isolates the sensitive FFT measurement circuits from digital switching activity.
+- **Substation and Ground Loops:** Galvanic Isolation across both power and SPI paths breaks earth loops and lessens GPR coupling between field ground potentials.
+- **Field Practicality:** The V75 + P106-S combination provides high capacity (90-day target runtime on a full charge under duty-cycled operation) with minimal complexity, while the cold weather solar charging limits below 0 °C and discharge cutoffs below -15 °C.
+
+**3. Power Budget**
+#### Component-Level Power Budget (Referred to 5.0 V V75 Bus)
+
+| Subsystem / Component | Domain | Rail | Active Current (5 V Bus) | Active Power | Sleep Current (5 V Bus) | Case A: Continuous (24/7) | Case B: Duty-Cycled (10% Active) |
+| :--- | :--- | :--- | :---: | :---: | :---: | :---: | :---: |
+| **nRF9151 DK** | GND | 5.0 V | 15.0 mA | 75.0 mW | 1.0 mA | 1.800 Wh/day | 0.287 Wh/day |
+| **nRF9151 DK (LTE-M Burst)** | GND | 5.0 V | 300.0 mA | 1,500.0 mW | 0.0 mA | 0.600 Wh/day | 0.300 Wh/day |
+| **SPI Digital Isolator (Primary)** | GND | 5.0 V | 2.0 mA | 10.0 mW | 0.45 mA | 0.240 Wh/day | 0.072 Wh/day |
+| **Battery Divider (100k/100k) + SMBJ6.0A** | GND | 5.0 V | 0.045 mA | 0.225 mW | 0.045 mA | 0.005 Wh/day | 0.005 Wh/day |
+| **Isolated Analog Domain (DC-DC, LT3042, ADR441, AD7352, MCP3460R, AFE, Isolator Sec.)** | AGND | 5.0 V in | 31.4 mA | 157.1 mW | 0.0 mA** | 3.770 Wh/day | 0.377 Wh/day |
+| **Total Daily Energy Demand** | **Both** | **5.0 V** | **48.5 mA (base)** | **242.4 mW (base)** | **1.5 mA** | **6.42 Wh/day** | **1.04 Wh/day** |
+
+**4. Solar vs. Non-Solar Runtime**
+
+**Energy Baseline:** Voltaic V75 usable capacity = 72.36 Wh × 85% boost efficiency = **61.5 Wh** (≈ 12.3 Ah at 5 V). Voltaic P106-S (6 W) solar harvest assumes 65% end-to-end efficiency (17.55 Wh/day spring–fall; 9.75 Wh/day clear winter; 1.56 Wh/day heavy overcast).
+
+| Operating Scenario / Metric | Case A: Continuous 24/7 (`6.42 Wh/day`) | Case B: Duty-Cycled 10% (`1.04 Wh/day`) |
+| :--- | :---: | :---: |
+| **Battery Only Runtime (Zero Solar)** | **9.6 days** | **59.1 days** |
+| **Solar: Spring–Fall (17.55 Wh/day)** | +11.13 Wh/day (Surplus) | +16.51 Wh/day (Surplus) |
+| **Solar: Clear Winter (9.75 Wh/day, > 0 °C)** | +3.33 Wh/day (Surplus) | +8.71 Wh/day (Surplus) |
+| **Solar: Normal Year-Round Timeline** | **Indefinite (90+ days)** | **Indefinite (90+ days)** |
+| **Heavy Overcast Survival (1.56 Wh/day)** | **12.7 days** (-4.86 Wh/day deficit) | **Indefinite** (+0.52 Wh/day surplus) |
+| **Continuous Sub-0 °C Freeze Survival (0 Wh/day)** | **9.6 days** (-6.42 Wh/day deficit) | **59.1 days** (-1.04 Wh/day deficit) |
+| **5-Day Freeze Battery Drain** | 32.1 Wh (52.2% of usable pack) | 5.2 Wh (8.5% of usable pack) |
+| **Winter Recovery (After 5-Day Freeze)** | **9.6 clear winter days** | **0.6 clear winter days (< 1 day)** |
+
+# **System Architecture**
+---
+
+The overall architecture of the Power Management and Conditioning Subsystem (PMCS) is as follows:
+- 1. Solar energy is harvesested by a Voltaic Systems P106-S 6W / 6V solar panel and fed directly into the dedicated solar input of the V75 battery pack.
+  2. Energy is stored in a Voltaic Systems V75 "Always-on" lithium-ion power bank (20.100 mAh / 72.36 Wh; 61.5 Wh usable at 5V) with built in BMS and pass-through charging.
+  3. The 5 V DC output enters the PMCS PCB throguh layered primary-side protection a 1.5 A inline fuse, a low leakage SMBj6.0A TVS diode, and a 47 µF + 0.1 µF bulk decoupling to power the non-isolated digital rail (GND), including the Nordic nRF9151 DK and battery divider.
+  4. A 2 kV galvanic isolation barrier formed by a RECOM/Murata 1 W 5V-to-5V isolated DC-DC converter (3 kV-rated variant), # **ADuM-series SPI digital isolators** , and a physical copper-free PCB moat/slot sized per IPC-2221 and IEC 60664-1 (PD2) this separates noisy digital GND from quiet analog AGND.
+  5. The isolated AGND side, a LC Pi-filter and an Analog Devices LT3042 ultra-low-noise LDO regulate the rail to a clean 3.3 V (< 10 µV RMS) for the precision reference (ADR441), ADCs (AD7352, MCP3460R), and telluric analog front-end, with all being housed inside a sealed NEMA 6P / IP68 enclosure (ZQ-161407).
+
+**Solar Harvesting:**
+To support multi-month unattended field deployment, the V75 is paired with the Voltaic Systems P106-S 6 W / 6 V monocrystalline solar panel. The panel produces a maximum power voltage of 6.5 V, an open-circuit voltage of 7.67 V, a peak current of 960 mA, and a short-circuit current of 1.02 A, fitting directly within the V75's 5–6 V / 2 A dedicated solar input rating without needing an external charge controller. Under Cookeville, TN weather conditions (assuming 65% harvest efficiency), the panel has roughly 17.55 Wh/day in spring through fall and 9.75 Wh/day on clear winter days—exceeding both continuous (6.42 Wh/day) and duty-cycled (1.04 Wh/day) system demand whenever temperatures remain above the V75's 0 °C charge cutoff. The solar feed enters the enclosure through a weatherproof cable gland straight to the V75's solar input.
+
+**Energy Storage:**
+
+**Enclosure and Primary Input Protection:**
+
+**Isolated Split-Rail PCB:**
