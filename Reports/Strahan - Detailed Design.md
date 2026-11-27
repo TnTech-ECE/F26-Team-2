@@ -143,9 +143,31 @@ The overall architecture of the Power Management and Conditioning Subsystem (PMC
 
 **Solar Harvesting:**
 To support multi-month unattended field deployment, the V75 is paired with the Voltaic Systems P106-S 6 W / 6 V monocrystalline solar panel. The panel produces a maximum power voltage of 6.5 V, an open-circuit voltage of 7.67 V, a peak current of 960 mA, and a short-circuit current of 1.02 A, fitting directly within the V75's 5–6 V / 2 A dedicated solar input rating without needing an external charge controller. Under Cookeville, TN weather conditions (assuming 65% harvest efficiency), the panel has roughly 17.55 Wh/day in spring through fall and 9.75 Wh/day on clear winter days—exceeding both continuous (6.42 Wh/day) and duty-cycled (1.04 Wh/day) system demand whenever temperatures remain above the V75's 0 °C charge cutoff. The solar feed enters the enclosure through a weatherproof cable gland straight to the V75's solar input.
+(Image of solar panel)
 
 **Energy Storage:**
+PMCS uses the Voltaic Systems V75 Always-On USB Battery Pack (20,100 mAh, 72.36 Wh nominal). Accounting for internal 3.6 V-to-5 V boost conversion efficiency (~85%), the pack provides 61.5 Wh of usable energy at the 5 V output bus. Unlike standard consumer power banks that shut down when load current drops into the microamp or milliamp range, the V75's Always-On mode keeps the 5 V bus active during deep-sleep while supporting pass-through solar charging. Its built in hardware BMS is documented to IEC 62133 and UN 38.3 ratings provide over-charge, over-discharge, over-current, short-circuit, and thermal protections, enforcing charging cutoffs at 0 °C to 45 °C and discharge cutoffs at -15 °C to 60 °C. Each 5 V output port is rated up to 2.0 A, providing room above the TC-GFI's ~0.77 A worst-case peak draw.
+(image of V75)
 
 **Enclosure and Primary Input Protection:**
+Both the V75 battery pack and the PMCS PCB are housed inside a sealed ZQ-161407 non-metallic polycarbonate enclosure rated NEMA 6P / IP68 (per NEMA 250 / IEC 60529) to protect against rain, dust, and standing water. Because the enclosure is non-metallic, there is no metal chassis to bond to earth ground; so, grounding focuses strictly on internal GND vs. AGND domain separation.
+
+Where the 5 V power feed from the V75 enters the PMCS PCB, three protective and stabilizing elements sit ahead of all downstream loads:
+
+- 1.5 A Inline Fuse: Sized at roughly 150–200% of the ~0.77 A worst-case simultaneous peak current to prevent tripping during cellular transmit bursts or startup spikes, while staying safely below the V75's 2.0 A port limit so hard faults blow clean.
+(image of inline fuse)
+
+- Low-Leakage SMBJ6.0A TVS Diode: Placed downstream of the fuse across +5 V and GND (cathode to +5 V, anode to GND) to clamp ESD and inductive transients (600 W peak pulse rating, 6.67 V minimum breakdown). Selecting a 6.0 V standoff device rather than a 5.0 V part avoids continuous reverse-leakage drain when the V75 outputs 5.05–5.20 V under light load, preserving the 90-day power budget.
+(Image of TVS Diode(
+
+- Bulk Decoupling (47 µF Electrolytic + 0.1 µF Ceramic): Placed immediately after the protection stage to act as a local charge reservoir during sudden 300–500 mA nRF9151 LTE-M transmit bursts (limiting transient voltage sag to < 5%) while shunting high-frequency digital switching noise to GND.
+(image of box and capacitors)
 
 **Isolated Split-Rail PCB:**
+To prevent cellular switching noise, earth ground loops, and substation Ground Potential Rise (GPR, per IEEE Std 80) from corrupting microvolt-scale telluric measurements, the PMCS PCB is physically partitioned into two electrically separate domains with zero shared copper:
+
+- Non-Isolated Digital (GND): Feeds the protected 5 V bus directly to the Nordic nRF9151 DK (VIN 5V, rated 4.0–5.5 V), the primary side of the isolated DC-DC converter, and the primary side of the SPI digital isolators. A 100 kΩ / 100 kΩ resistor voltage divider scales the 5 V supply rail by half (2.5 V , drawing only 25 µA continuously) into the nRF9151's SAADC pin so it can monitor battery health.
+
+- 2 kV Galvanic Isolation Barrier: A RECOM or Murata 1 W 5V-to-5V isolated DC-DC converter ( 3 kV DC-rated variant for comfortable margin above the 2 kV requirement) transfers power magnetically across the barrier, while ADuM-series digital isolators carry the SPI bus (SCK, MOSI, MISO, CS) between the nRF9151 and the ADCs. On the PCB layout, all GND copper is confined to one half and all AGND copper to the other, separated across every layer by a 6.3–8.0 mm copper-free isolation moat (with an optional milled air slot) sized per IPC-2221 and IEC 60664-1 for a Pollution Degree 2 (PD2) environment.
+
+- Ultra-Low-Noise Analog (AGND): On the secondary side of the isolated DC-DC converter, switching ripple and high-frequency spikes pass through an LC Pi-filter consisting of a series ferrite bead with two 10 µF MLCC capacitors (chosen over the 4.7 µF minimum to maintain capacitance under 5 V DC bias). The filtered 5 V rail feeds an Analog Devices LT3042 ultra-low-noise, high-PSRR LDO (79 dB PSRR at 1 MHz). A single 33 kΩ RSET resistor tied from the SET pin to AGND programs the internal 100 µA precision current source to output 3.3 V ($V_{\text{OUT}} = 100\,\mu\text{A} \times 33\,\text{k}\Omega = 3.3\,\text{V}$), paired with a 4.7 µF CSET bypass capacitor to drive output noise down to ~0.8 µV RMS (well below the < 10 µV RMS telluric band target). At ~20 mA active analog load, the LT3042 dissipates only ~44 mW, requiring no heatsink. This clean 3.3 V rail powers the ADR441 2.5 V voltage reference, AD7352 and MCP3460R ADCs, analog front-end amplifiers, and the secondary side of the SPI digital isolators.(Suggested Figure: Isolated Split-Rail PCB Partitioning / Block Diagram)
