@@ -84,7 +84,7 @@ The Power Management and Conditioning Subsystem (PMCS) is controlled by specific
 | **IPC-2221 & IEC 60664-1** | PCB clearance & creepage spacing | Maintain a physical PCB isolation moat/slot between GND and AGND sized for the 2 kV isolation barrier and PD2 environment. |
 | **NEMA 250 / IEC 60529** | Environmental & ingress protection | House the V75 battery pack and PMCS electronics inside a sealed NEMA 6P / IP68 enclosure (ZQ-161407) with weatherproof glands. |
 | **IEEE Std 80** | Substation GPR / isolation reference | Provide 2 kV galvanic isolation across DC-DC and SPI signal paths to prevent GPR damage and ground loops. |
-| **IEEE Std C62.41** | Surge waveform reference | Apply input surge/TVS clamping (SMBJ5.0A) and current limiting ahead of the isolation barrier; avoid calling it a certification. |
+| **IEEE Std C62.41** | Surge waveform reference | Apply input surge/TVS clamping (SMBJ6.0A) and current limiting ahead of the isolation barrier; avoid calling it a certification. |
 | **IEEE Std 1100** | Sensitive analog power/grounding | Use LC Pi-filtering and LT3042 high-PSRR LDO to keep analog rail noise under 10 µV RMS across the telluric band. |
 
 # **Overview of Proposed Solution**
@@ -94,7 +94,7 @@ The PMCS for the TC-GFI delivers conditioned, galvanically isolated, and low noi
 **1. Architecture Strategy**
 To protect micro-volt telluric signals from the digital switching noise and prevent ground loops or Ground Potential Rise (GPR) near substation testing from inaccurate measurements. The PMCS will use a split system for the isolated analog front-end and the non-isolated digital/telemetry side.
 - **Energy Harvesting and Storage Front-End**: A Voltaic Systems P106-S 6W / 6V solar panel feeds pass-through charging into a Voltaic Systems V75 "Always-On" lithium-ion power bank (20,100 mAh / 72 Wh) with built in BMS (IEC 62133 / UN 38.3). Using an "Always-On" pack such as the V75 prevents low current shut off during microamp/milliamp sleep windows while keeping the TC-GFI within budget and safety limits.
-- **Primary Input Protection:** The V75's 5 V output enters the PMCS through a 1.5 A inline fuse, and SMBJ6.0A TVS diode for transient/surge clamping, and bulk decoupling (47 µF electrolytic & 0.1 µF ceramic) to stabilize load steps and feed the non-isolated digital/telemetry side (GND).
+- **Primary Input Protection:** Power exits the V75's USB-A "Always-On" port using a 20 AWG bare-wire pigtail harness through a master toggle switch and a 1.5 A inline fuse into a 2-pin PCB screw terminal. Than into a SMBJ6.0A TVS diode for transient/surge clamping and bulk decoupling (47 µF electrolytic & 0.1 µF ceramic) to stabilize load steps and feed the non-isolated digital (GND).
 - **2 kV Galvanic Isolation Barrier:** A RECOM/Murata 1 W 5V-to-5V isolated DC-DC converter with a digital isolator across SPI signal lines establishes a 2 kV galvanic isolation barrier separating non-isolated (GND) from isolated analog (AGND) across a physical PCB slot sized using IPC-2221 and IEC 60664-1.
 - **Ultra-Low-Noise Analog Rail:** On the isolated AGND side, the 5 V rail passes through an LC Pi-filter (ferrite bead + 10 µF MLCC) into two parallel Analog Devices LT3042 ultra-low-noise, high-PSRR LDOs (< 10 µV RMS ripple) one with a 33 kΩ RSET resistor for the 3.3 V rail (MCP3460R ADCs, AFE, and isolator secondary) and one with a 25 kΩ RSET resistor for the 2.5 V rail (AD7352 ADCs).
 - **Battery / Supply:** A 100 kΩ / 100 kΩ resistor voltage divider will be used to scale the supply voltage into the nRF9151 SAADC input so the system can log battery health and detect low charge or cold weather charging pauses (0 °C to 45 °C charge cutoff; -15 °C to 60 °C discharge cutoff on the V75).
@@ -142,11 +142,11 @@ To protect micro-volt telluric signals from the digital switching noise and prev
 ---
 
 The overall architecture of the Power Management and Conditioning Subsystem (PMCS) is as follows:
-1. Solar energy is harvesested by a Voltaic Systems P106-S 6W / 6V solar panel and fed directly into the dedicated solar input of the V75 battery pack.
+1. Solar energy is harvested by a Voltaic Systems P106-S 6 W / 6 V solar panel and fed through an IP68 weatherproof cable gland directly into the dedicated solar input of the V75 battery pack.
 2. Energy is stored in a Voltaic Systems V75 "Always-on" lithium-ion power bank (20.100 mAh / 72.36 Wh; 61.5 Wh usable at 5V) with built in BMS and pass-through charging.
-3. The 5 V DC output enters the PMCS PCB throguh layered primary-side protection a 1.5 A inline fuse, a low leakage SMBj6.0A TVS diode, and a 47 µF + 0.1 µF bulk decoupling to power the non-isolated digital rail (GND), including the Nordic nRF9151 DK and battery divider.
-4. A 2 kV galvanic isolation barrier formed by a RECOM/Murata 1 W 5V-to-5V isolated DC-DC converter (3 kV-rated variant), # **ADuM-series SPI digital isolators** , and a physical copper-free PCB moat/slot sized per IPC-2221 and IEC 60664-1 (PD2) this separates noisy digital GND from quiet analog AGND.
-5. The isolated AGND side, a LC Pi-filter and an Analog Devices LT3042 ultra-low-noise LDO regulate the rail to a clean 3.3 V (< 10 µV RMS) for the precision reference (ADR441), ADCs (AD7352, MCP3460R), and telluric analog front-end, with all being housed inside a sealed NEMA 6P / IP68 enclosure (ZQ-161407).
+3. The 5 V DC output exits one of the V75's USB-A "Always-On" ports using a 20 AWG bare-wire pigtail harness, through a master toggle switch and 1.5 A inline fuse into a 2-pin PCB screw terminal. Then goes through a low-leakage SMBJ6.0A TVS diode and 47 µF + 0.1 µF bulk decoupling to power the non-isolated digital (GND), including the Nordic nRF9151 DK and battery divider.
+4. A 2 kV galvanic isolation barrier formed by a RECOM/Murata 1 W 5V-to-5V isolated DC-DC converter (3 kV-rated variant), SPI digital isolators , and a physical copper-free PCB moat/slot sized per IPC-2221 and IEC 60664-1 (PD2) this separates noisy digital GND from quiet analog AGND.
+5. The isolated AGND side, an LC Pi-filter and two parallel Analog Devices LT3042 ultra-low-noise LDOs regulate the rail to clean 3.3 V and 2.5 V outputs (< 10 µV RMS) for the ADCs (3× MCP3460R, 2× AD7352), analog front-end, and isolator secondary, with electronics inside a sealed NEMA 6P / IP68 enclosure (ZQ-161407).
 
 **1.Solar Harvesting:**
 To support multi-month unattended field deployment, the V75 is paired with the Voltaic Systems P106-S 6 W / 6 V monocrystalline solar panel. The panel produces a maximum power voltage of 6.5 V, an open-circuit voltage of 7.67 V, a peak current of 960 mA, and a short-circuit current of 1.02 A, fitting directly within the V75's 5–6 V / 2 A dedicated solar input rating without needing an external charge controller. Under Cookeville, TN weather conditions (assuming 65% harvest efficiency), the panel has roughly 17.55 Wh/day in spring through fall and 9.75 Wh/day on clear winter days—exceeding both continuous (6.42 Wh/day) and duty-cycled (1.04 Wh/day) system demand whenever temperatures remain above the V75's 0 °C charge cutoff. The solar feed enters the enclosure through a weatherproof cable gland straight to the V75's solar input.
@@ -160,6 +160,8 @@ PMCS uses the Voltaic Systems V75 Always-On USB Battery Pack (20,100 mAh, 72.36 
 Both the V75 battery pack and the PMCS PCB are housed inside a sealed ZQ-161407 non-metallic polycarbonate enclosure rated NEMA 6P / IP68 (per NEMA 250 / IEC 60529) to protect against rain, dust, and standing water. Because the enclosure is non-metallic, there is no metal chassis to bond to earth ground; so, grounding focuses strictly on internal GND vs. AGND domain separation.
 
 Where the 5 V power feed from the V75 enters the PMCS PCB, three protective and stabilizing elements sit ahead of all downstream loads:
+
+- USB-A Always-On Pigtail, Master Toggle Switch, & Screw Terminal: A 20 AWG USB-A male to 2-pin bare-wire pigtail connects the V75's USB-A Always-On port through an IP68-rated 3–5 A DC SPST master toggle switch and inline fuse holder into a 2-pin PCB screw terminal. Using 20 AWG wire minimizes voltage drop during 500 mA LTE-M transmit bursts.
 
 - 1.5 A Inline Fuse: Sized at roughly 150–200% of the ~0.77 A worst-case simultaneous peak current to prevent tripping during cellular transmit bursts or startup spikes, while staying safely below the V75's 2.0 A port limit so hard faults blow clean.
 (image of inline fuse)
@@ -187,7 +189,7 @@ To prevent cellular switching noise, earth ground loops, and substation Ground P
 | Interface ID | Signal / Rail | Source | Destination | Ground Domain | Nominal Level / Spec | Purpose & Notes |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | **IF-PMCS-01** | Solar Input | Voltaic P106-S Panel | Voltaic V75 Solar Port | Isolated input / GND | 6.5 V Vmp / 7.67 V Voc, 0.96 A max | Enters ZQ-161407 via weatherproof gland; managed by V75 BMS (0–45 °C charge window). |
-| **IF-PMCS-02** | Primary 5 V Bus | Voltaic V75 Output | PMCS Protection Input | GND | 5.0 V DC, 2.0 A port limit | Routed through off-board master toggle switch and 1.5 A inline fuse, followed by SMBJ6.0A TVS and 47 µF + 0.1 µF decoupling. |
+| **IF-PMCS-02** | Primary 5 V Bus | Voltaic V75 USB-A Always-On Port | PMCS PCB Screw Terminal | GND | 5.0 V DC, 2.0 A port limit | 20 AWG USB-A bare-wire pigtail routed through master toggle switch and 1.5 A inline fuse, followed by SMBJ6.0A TVS and 47 µF + 0.1 µF decoupling. |
 | **IF-PMCS-03** | Digital 5 V Rail (+5V_DIG) | PMCS Protected 5 V | Nordic nRF9151 DK (VIN 5V) | GND | 5.0 V DC (4.0–5.5 V allowed), 500 mA peak | Powers MCU, DSP, and LTE-M/GNSS cellular modem bursts via board headers (with test jumper). |
 | **IF-PMCS-04** | Battery Sensor | 100 kΩ / 100 kΩ Divider | nRF9151 DK SAADC Pin | GND | 2.5 V (0–3.0 V range), 25 µA | Continuous supply voltage monitoring on non-isolated digital side. |
 | **IF-PMCS-05** | Isolated Power Transfer | Primary 5 V (GND) | Isolated 5 V (AGND) | GND → AGND | 5 V to 5 V, 1 W max, ≥ 2 kV isolation | RECOM/Murata 3 kV-rated isolated DC-DC converter spanning the 6.3–8.0 mm PCB moat. |
@@ -300,5 +302,5 @@ Using the Voltaic V75 usable capacity E_batt = 72.36 Wh × 0.85 = 61.5 Wh and da
 | **SR-03 (Isolation)** | ≥ 2 kV galvanic barrier | 3 kV DC-DC + ≥ 2.5 kV SPI iso + 6.3–8.0 mm moat | **Pass** |
 | **SR-04 / TCS-PS1 (Autonomy)** | ≥ 90 days unattended | Indefinite (90+ days) in Case B; 48 days zero-solar | **Pass (Case B)** |
 | **SR-05 (Transients)** | < 5% (250 mV) sag on load steps | 128 mV (2.56%) sag with 47 µF bulk cap | **Pass** |
-| **SR-06 / TCS-PS2 (Safety/Surge)** | UL 2056/1642, NEC, IEEE C62.41 | Certified V75 + 1.5 A fuse + SMBJ6.0A (V_C = 10.3 V) | **Pass** |
+| **SR-06 / TCS-PS2 (Safety/Surge)** | IEC 62133, UN 38.3, NEC, IEEE C62.41 | Certified V75 + 1.5 A fuse + SMBJ6.0A (V_C = 10.3 V) | **Pass** |
 | **TCS-WS2 (Thermal)** | -30 °C to +41 °C | PCB T_J ≤ 52.5 °C at 50 °C box; V75 cuts off at -15 °C | **Conditional*** |
