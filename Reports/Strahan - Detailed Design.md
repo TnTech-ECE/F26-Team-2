@@ -79,57 +79,64 @@ The Power Management and Conditioning Subsystem (PMCS) is controlled by specific
 | :--- | :--- | :--- |
 | **IEC 62133-2 & UN 38.3** | Battery safety & transport reference | Use pre-built Voltaic V75 pack with internal BMS; observe 0 °C to 45 °C charge and -15 °C to 60 °C discharge cutoffs. |
 | **NEC Art. 690** | Solar/DC wiring & fuse guidance | Add 1.5 A inline overcurrent fusing, proper wire/connector ratings, and solar input limits (P106-S into V75). |
-| **NEC Art. 250** | Grounding/bonding reference | Document `AGND` vs. `GND` single-point reference (no metal box chassis on ZQ-161407) and verify reference continuity. |
+| **NEC Art. 250** | Grounding/bonding reference | Document AGND vs. GND single-point reference (no metal box chassis on ZQ-161407) and verify reference continuity. |
 | **NEC Art. 725** | Low-voltage circuit separation | Keep low-voltage DC/AFE signals segregated from external/field wiring across the isolation boundary. |
-| **IPC-2221 & IEC 60664-1** | PCB clearance & creepage spacing | Maintain a physical PCB isolation moat/slot between `GND` and `AGND` sized for the 2 kV isolation barrier and PD2 environment. |
+| **IPC-2221 & IEC 60664-1** | PCB clearance & creepage spacing | Maintain a physical PCB isolation moat/slot between GND and AGND sized for the 2 kV isolation barrier and PD2 environment. |
 | **NEMA 250 / IEC 60529** | Environmental & ingress protection | House the V75 battery pack and PMCS electronics inside a sealed NEMA 6P / IP68 enclosure (ZQ-161407) with weatherproof glands. |
 | **IEEE Std 80** | Substation GPR / isolation reference | Provide 2 kV galvanic isolation across DC-DC and SPI signal paths to prevent GPR damage and ground loops. |
-| **IEEE Std C62.41** | Surge waveform reference | Apply input surge/TVS clamping (`SMBJ5.0A`) and current limiting ahead of the isolation barrier; avoid calling it a certification. |
+| **IEEE Std C62.41** | Surge waveform reference | Apply input surge/TVS clamping (SMBJ5.0A) and current limiting ahead of the isolation barrier; avoid calling it a certification. |
 | **IEEE Std 1100** | Sensitive analog power/grounding | Use LC Pi-filtering and LT3042 high-PSRR LDO to keep analog rail noise under 10 µV RMS across the telluric band. |
 
 # **Overview of Proposed Solution**
 --- 
 The PMCS for the TC-GFI delivers conditioned, galvanically isolated, and low noise DC power to both the digital and analog telluric measurement front-end while supporting multi month unattended field operations. Instead of using a custom high-voltage conversion or raw lithium cells, the proposed architecture pairs a commercial pass through solar/battery power source with a single board conditioning and isolating stage housed inside a sealed NEMA 6P/IP68 enclosure (ZQ-161407). 
 
-**1. Architecture Strategy
-To protect micro-volt telluric signals from the digital switching noise and prevent ground loops or Ground Potential Rise (GPR) near substation testing from in accurate measurements. The PMCS will use a split system for the isolated analog front-end and the non-isolated digital/telemetry side.
-**2.Energy Harvesting and Storage Front-End**: A Voltaic Systems P106-S 6W / 6V solar panel feeds pass-through charging into a Voltaic Systems V75 "Always-On" lithium-ion power bank (20,100 mAh / 72 Wh) with built in BMS (IEC 62133 / UN 38.3) Using an "Always-On" pack such as the V75 prevents low current shut off during microamp/milliamp sleep windows while keeping the TC-GFI withing budget and safety limits.
-**3.Primary Input Protection:** The V75's 5 V output enters the PMCS through a 1.5 A inline fuse, and SMBJ5.0A TVS diode for transient/surge clamping, and bulk decoupling (47 µF electrolytic & 0.1 µF ceramic) to stabilize load steps and feed the non-isolated digital/telemetry side (GND).
-**4. kV Galvanic Isolation Barrier:** A RECOM/Murata 1 W 5V-to-5V isolated DC-DC converter with a digital isolator across SPI signal lines establishes a 2 kV galvanic isolation barrier separating non-isolated (GND) from isolated analog (AGND) across a physical PCB slot sized using IPC-2221 and IEC 60664-1.
-- **Ultra-Low-Noise Analog Rail:** On the isolated AGND side the Isolated 5 V rail passes through and LC-PI-Filter (Ferrite bead + 10 µF MLCC) into an Analog Devices LT3042 ultra-low-noise, high PSRR LDO (with a 33 kΩ RSET resistor) to supply clean analog power (< 10 µV RMS ripple) for the precision refrence (ADR441) and ADCs (MCP3460R & AD7352).
+**1. Architecture Strategy**
+To protect micro-volt telluric signals from the digital switching noise and prevent ground loops or Ground Potential Rise (GPR) near substation testing from inaccurate measurements. The PMCS will use a split system for the isolated analog front-end and the non-isolated digital/telemetry side.
+- **Energy Harvesting and Storage Front-End**: A Voltaic Systems P106-S 6W / 6V solar panel feeds pass-through charging into a Voltaic Systems V75 "Always-On" lithium-ion power bank (20,100 mAh / 72 Wh) with built in BMS (IEC 62133 / UN 38.3). Using an "Always-On" pack such as the V75 prevents low current shut off during microamp/milliamp sleep windows while keeping the TC-GFI within budget and safety limits.
+- **Primary Input Protection:** The V75's 5 V output enters the PMCS through a 1.5 A inline fuse, and SMBJ6.0A TVS diode for transient/surge clamping, and bulk decoupling (47 µF electrolytic & 0.1 µF ceramic) to stabilize load steps and feed the non-isolated digital/telemetry side (GND).
+- **2 kV Galvanic Isolation Barrier:** A RECOM/Murata 1 W 5V-to-5V isolated DC-DC converter with a digital isolator across SPI signal lines establishes a 2 kV galvanic isolation barrier separating non-isolated (GND) from isolated analog (AGND) across a physical PCB slot sized using IPC-2221 and IEC 60664-1.
+- **Ultra-Low-Noise Analog Rail:** On the isolated AGND side, the 5 V rail passes through an LC Pi-filter (ferrite bead + 10 µF MLCC) into two parallel Analog Devices LT3042 ultra-low-noise, high-PSRR LDOs (< 10 µV RMS ripple) one with a 33 kΩ RSET resistor for the 3.3 V rail (MCP3460R ADCs, AFE, and isolator secondary) and one with a 25 kΩ RSET resistor for the 2.5 V rail (AD7352 ADCs).
 - **Battery / Supply:** A 100 kΩ / 100 kΩ resistor voltage divider will be used to scale the supply voltage into the nRF9151 SAADC input so the system can log battery health and detect low charge or cold weather charging pauses (0 °C to 45 °C charge cutoff; -15 °C to 60 °C discharge cutoff on the V75).
 
 **2. Why the Architecture fits the TC-GFI:**
 - **Noise and Signal Integrity:** Separating GND and AGND and post regulating with the LT3042 after LC filtering isolates the sensitive FFT measurement circuits from digital switching activity.
 - **Substation and Ground Loops:** Galvanic Isolation across both power and SPI paths breaks earth loops and lessens GPR coupling between field ground potentials.
-- **Field Practicality:** The V75 + P106-S combination provides high capacity (90-day target runtime on a full charge under duty-cycled operation) with minimal complexity, while the cold weather solar charging limits below 0 °C and discharge cutoffs below -15 °C.
+- **Field Practicality:** The V75 + P106-S combination provides high capacity (90-day target runtime on solar assisted charging under duty-cycled operation) with minimal complexity, while the cold weather solar charging limits below 0 °C and discharge cutoffs below -15 °C.
 
 **3. Power Budget**
-#### Component-Level Power Budget (Referred to 5.0 V V75 Bus)
+#### Component Power Budget (Referred to 5.0 V V75 Bus)
 
 | Subsystem / Component | Domain | Rail | Active Current (5 V Bus) | Active Power | Sleep Current (5 V Bus) | Case A: Continuous (24/7) | Case B: Duty-Cycled (10% Active) |
 | :--- | :--- | :--- | :---: | :---: | :---: | :---: | :---: |
-| **nRF9151 DK** | GND | 5.0 V | 15.0 mA | 75.0 mW | 1.0 mA | 1.800 Wh/day | 0.287 Wh/day |
-| **nRF9151 DK (LTE-M Burst)** | GND | 5.0 V | 300.0 mA | 1,500.0 mW | 0.0 mA | 0.600 Wh/day | 0.300 Wh/day |
+| **nRF9151 DK (MCU)** | GND | 5.0 V | 15.0 mA | 75.0 mW | 1.0 mA* | 1.800 Wh/day | 0.287 Wh/day |
+| **nRF9151 DK (LTE Burst)** | GND | 5.0 V | 300.0 mA | 1,500.0 mW | 0.0 mA | 0.600 Wh/day | 0.300 Wh/day |
 | **SPI Digital Isolator (Primary)** | GND | 5.0 V | 2.0 mA | 10.0 mW | 0.45 mA | 0.240 Wh/day | 0.072 Wh/day |
-| **Battery Divider (100k/100k) + SMBJ6.0A** | GND | 5.0 V | 0.045 mA | 0.225 mW | 0.045 mA | 0.005 Wh/day | 0.005 Wh/day |
-| **Isolated Analog Domain (DC-DC, LT3042, ADR441, AD7352, MCP3460R, AFE, Isolator Sec.)** | AGND | 5.0 V in | 31.4 mA | 157.1 mW | 0.0 mA** | 3.770 Wh/day | 0.377 Wh/day |
-| **Total Daily Energy Demand** | **Both** | **5.0 V** | **48.5 mA (base)** | **242.4 mW (base)** | **1.5 mA** | **6.42 Wh/day** | **1.04 Wh/day** |
+| **Battery Divider (100 kΩ / 100 kΩ) + SMBJ6.0A** | GND | 5.0 V | 0.045 mA | 0.225 mW | 0.045 mA | 0.005 Wh/day | 0.005 Wh/day |
+| **Status / Battery Health LEDs** | GND | 5.0 V | Negligible*** | Negligible*** | 0.0 mA | Negligible | Negligible |
+| **Isolated Analog Domain (DC-DC, 2× LT3042, 3× MCP3460R, 2× AD7352, AFE, Isolator Sec.)** | AGND | 5.0 V in | 51.4 mA | 257.1 mW | 0.0 mA** | 6.171 Wh/day | 0.617 Wh/day |
+| **Total Daily Energy Demand** | **Both** | **5.0 V** | **68.5 mA (base)** | **342.3 mW (base)** | **1.5 mA** | **8.82 Wh/day** | **1.28 Wh/day** |
 
-**4. Solar vs. Non-Solar Runtime**
+*\*nRF9151 SiP PSM floor is 2.7 µA; 1.0 mA conservatively budgets DK board overhead.*  
+*\*\*\*LEDs draw ~1–2 mA only when pulsed (0.5% duty cycle) or activated via momentary test button, contributing < 0.003 Wh/day.*  
+*\*\*\*\*Case A assumes 24 hr/day continuous sensing + 24 min/day (0.4 hr) LTE-M TX. Case B assumes 2.4 hr/day active sensing + 12 min/day (0.2 hr) LTE-M TX + 21.4 hr/day sleep.*
+
+---
+
+#### Solar vs. Non-Solar Runtime
 
 **Energy Baseline:** Voltaic V75 usable capacity = 72.36 Wh × 85% boost efficiency = **61.5 Wh** (≈ 12.3 Ah at 5 V). Voltaic P106-S (6 W) solar harvest assumes 65% end-to-end efficiency (17.55 Wh/day spring–fall; 9.75 Wh/day clear winter; 1.56 Wh/day heavy overcast).
 
-| Operating Scenario / Metric | Case A: Continuous 24/7 (`6.42 Wh/day`) | Case B: Duty-Cycled 10% (`1.04 Wh/day`) |
+| Operating Scenario / Metric | Case A: Continuous 24/7 (`8.82 Wh/day`) | Case B: Duty-Cycled 10% (`1.28 Wh/day`) |
 | :--- | :---: | :---: |
-| **Battery Only Runtime (Zero Solar)** | **9.6 days** | **59.1 days** |
-| **Solar: Spring–Fall (17.55 Wh/day)** | +11.13 Wh/day (Surplus) | +16.51 Wh/day (Surplus) |
-| **Solar: Clear Winter (9.75 Wh/day, > 0 °C)** | +3.33 Wh/day (Surplus) | +8.71 Wh/day (Surplus) |
-| **Solar: Normal Year-Round Timeline** | **Indefinite (90+ days)** | **Indefinite (90+ days)** |
-| **Heavy Overcast Survival (1.56 Wh/day)** | **12.7 days** (-4.86 Wh/day deficit) | **Indefinite** (+0.52 Wh/day surplus) |
-| **Continuous Sub-0 °C Freeze Survival (0 Wh/day)** | **9.6 days** (-6.42 Wh/day deficit) | **59.1 days** (-1.04 Wh/day deficit) |
-| **5-Day Freeze Battery Drain** | 32.1 Wh (52.2% of usable pack) | 5.2 Wh (8.5% of usable pack) |
-| **Winter Recovery (After 5-Day Freeze)** | **9.6 clear winter days** | **0.6 clear winter days (< 1 day)** |
+| **Non-Solar Battery Only Runtime** | **7.0 days** | **48.0 days** |
+| **Solar-Assisted: Spring–Fall Net Balance (17.55 Wh/day)** | 8.73 Wh/day (Surplus) | 16.27 Wh/day (Surplus) |
+| **Solar-Assisted: Clear Winter Net Balance (9.75 Wh/day, > 0 °C)** | 0.93 Wh/day (Surplus) | 8.47 Wh/day (Surplus) |
+| **Solar-Assisted: Normal Year-Round Timeline** | **Indefinite (Spring–Fall); Winter-Limited** | **Indefinite (90+ days)** |
+| **Heavy Overcast Survival (1.56 Wh/day)** | **8.5 days** (7.26 Wh/day deficit) | **Indefinite** (0.28 Wh/day surplus) |
+| **Continuous Sub-0 °C Freeze Survival (0 Wh/day)** | **7.0 days** (8.82 Wh/day deficit) | **48.0 days** (1.28 Wh/day deficit) |
+| **5 Day Freeze Battery Drain** | 44.1 Wh (71.7% of usable pack) | 6.4 Wh (10.4% of usable pack) |
+| **Winter Recovery Time (After 5 Day Freeze)** | **47.4 clear winter days** | **0.8 clear winter days (< 1 day)** |
 
 # **System Architecture**
 ---
