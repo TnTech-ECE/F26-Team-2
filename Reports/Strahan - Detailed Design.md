@@ -195,3 +195,110 @@ To prevent cellular switching noise, earth ground loops, and substation Ground P
 | **IF-PMCS-07** | Clean Analog 3.3 V (+3.3V_ANA) | PMCS LT3042 #1 (33 kΩ RSET) | 3× MCP3460R, AFE amps, AD7352 VDRIVE, Isolator Sec. | AGND | 3.3 V DC ±1%, 11.2 mA active, < 10 µV RMS | Post-regulated after LC Pi-filter; includes test jumper for independent bring-up. |
 | **IF-PMCS-08** | Clean Analog 2.5 V (+2.5V_ANA) | PMCS LT3042 #2 (25 kΩ RSET) | 2× AD7352 (VDD) | AGND | 2.5 V DC ±1%, ~20.8 mA active, < 10 µV RMS | Dedicated low-noise supply within AD7352 2.25–2.75 V VDD spec; includes test jumper. |
 | **IF-PMCS-9** | Status / Battery Health LEDs | nRF9151 DK GPIOs | External / Panel LEDs | GND | 1.8 V / 3.0 V logic, ~1–2 mA per LED | Power Status / Low-Battery LEDs (pulsed or press-to-test to protect power budget); isolated from AGND. |
+
+#**Schematic / PCB / Flowchart / LTSpice?**
+
+---
+
+
+#**BOM**
+
+---
+
+
+#**Analysis:**
+
+---
+
+This section evaluates the Power Management and Conditioning Subsystem (PMCS) against customer specifications (TCS-PS, TCS-WS, TCS-F), subsystem requirements (SR-01 through SR-06), and electrical standards (IEEE Std 80, IEEE Std 1100, IEEE Std C62.41, IEC 60664-1, and NFPA 70).
+
+### 1. Analog Power Quality, Ripple Effects, and Noise (SR-02, TCS-PS4, IEEE Std 1100)
+To prevent switching harmonics from leaking into the telluric FFT band, the analog rails (+3.3V_ANALOG and +2.5V_ANALOG) must maintain switching ripple below 10 µV p-p and band noise below 10 µV RMS.
+
+#### Switching Ripple Suppression (LC Pi-Filter + LT3042 PSRR)
+The 1 W isolated DC-DC converter (RECOM/Murata 5V-to-5V) produces a output ripple of V_ripple = 50 mV p-p around its 100 kHz switching frequency, along with high-frequency switching spikes (> 1 MHz).
+- **Pre-Filtering:** The passive LC Pi-filter (ferrite bead + 10 µF MLCCs) reduces megahertz-range switching where linear regulator PSRR naturally fades.
+- **LDO Post-Regulation:** Downstream, both LT3042 LDOs provide at least 75 dB of PSRR at 100 kHz. The residual switching ripple reaching the ADCs is:
+  - V_ripple = V_ripple,in × 10^(-PSRR / 20)
+  - V_ripple,out = 50 mV × 10^(-75 / 20) = 50 mV × 0.0001778 = 8.89 µV p-p
+- **Result:** Meets the < 10 µV p-p limit of SR-02.
+
+#### LDO Output Noise (0.80 µV RMS) and CSET Sizing
+The LT3042 uses an internal 100 µA reference current source (I_noise = 6 nA RMS) into RSET:
+- **Bypassing the SET Pin:** Adding CSET = 4.7 µF in parallel with RSET forms a low-pass filter with a -3 dB corner frequency of f_c = 1 / (2π × 33 kΩ × 4.7 µF) = 1.03 Hz on the 3.3 V LDO (and 1.35 Hz with 25 kΩ on the 2.5 V LDO). Because both corners sit below 10 Hz, reference current noise and resistor thermal noise are shunted directly to AGND.
+- **Total Integrated Noise (10 Hz – 100 kHz):** Integrating the remaining buffer white noise (2 nV/√Hz × √100,000 Hz = 0.63 µV RMS) in with low-frequency 1/f flicker noise (0.49 µV RMS) yields:
+  - V_RMS,total = √(0.63² + 0.49²) = 0.80 µV RMS
+- **Startup Trade-Off:** Using CSET = 4.7 µF increases LDO startup ramp time to 360–550 ms (without fast start-up), which has no impact on a continuously powered or 10%-duty-cycle field sensor.
+- **Rail Splitting Advantage:** Separating the 2× AD7352 core supplies (+2.5V_ANALOG, 2.25–2.75 V spec) onto a dedicated LT3042 limits high-speed SAR ADC switching currents from the +3.3V_ANALOG rail used by the 3× MCP3460R ADCs and the analog front-end.
+
+---
+
+### 2. Voltage Regulation and Decoupling Analysis (`SR-01`, `SR-05`)
+- **Analog Rail Regulation (±2% Limit):** The LT3042 specifies ±1% SET-pin current accuracy and < 1 mV load regulation. Paired with RSET resistors (33 kΩ and 25 kΩ), total DC output error remains within ±1.1% across load and temperature, comfortably satisfying SR-01 (±2%).
+- **Digital Rail Decoupling & Load-Step Math (< 5% / 250 mV Sag Limit):** The nRF9151 DK draws up to 300–500 mA during LTE-M transmit bursts. Routing +5V_DIGITAL directly from the Voltaic V75 (2.0 A port rating) rather than through the 200 mA isolated DC-DC converter prevents brownouts. Modeling a 300 mA LTE-M current step over a 20 µs converter (Δt) response window across the 47 µF bulk capacitor (C):
+  - ΔV = (I_step × Δt) / C = (0.300 A × 20 µs) / 47 µF = 128 mV (2.56% of 5.0 V)
+- **Result:** Remains well below the 5% (250 mV) transient sag limit of SR-05, while the parallel 0.1 µF MLCC shunts high-frequency (MHz) switching transients locally.
+
+---
+
+### 3. Thermal Analysis and Component Derating (`TCS-WS2`)
+Inside the sealed ZQ-161407 polycarbonate enclosure under peak Tennessee summer sun (41 °C), internal enclosure temperature is modeled at T_A = 50 °C. Using the LT3042 thermal resistance (θ_JA = 41 °C/W, max junction limit T_J,max = 125 °C):
+
+- **LT3042 #1 (+3.3V_ANALOG):** Supplies 11.2 mA active load + 2.0 mA quiescent current from the 5.0 V isolated rail:
+  - P_D1 = (5.0 V - 3.3 V) × 0.0112 A + (5.0 V × 0.002 A) = 19.0 mW + 10.0 mW = 29.0 mW
+  - T_J1 = 50 °C + (0.029 W × 41 °C/W) = 51.2 °C (73.8 °C safety margin)
+- **LT3042 #2 (+2.5V_ANA):** Supplies 20.8 mA active load (2× AD7352) + 2.0 mA quiescent current from the 5.0 V isolated rail:
+  - P_D2 = (5.0 V - 2.5 V) × 0.0208 A + (5.0 V × 0.002 A) = 52.0 mW + 10.0 mW = 62.0 mW
+  - T_J2 = 50 °C + (0.062 W × 41 °C/W) = 52.5 °C (72.5 °C safety margin)
+- **Isolated DC-DC Converter Derating:** Total isolated output load is 180.0 mW on a 1,000 mW (1 W) module (**18% utilization**), leaving 82% power headroom so the converter operates at an ambient temperature with zero forced airflow required.
+
+---
+
+### 4. Galvanic Isolation, Input Protection, and Standards (`SR-03`, `SR-06`, `TCS-PS2`)
+- **2 kV Galvanic Isolation Barrier (IEEE Std 80, IEC 60664-1, NEC Art. 725):** Both power (3 kV rated RECOM/Murata isolated DC-DC) and SPI data lines (≥ 2.5 kV digital isolators) bridge a dedicated 6.3–8.0 mm copper free PCB isolation moat separating GND and AGND. This exceeds the 6.3 mm clearance target for NEC Art. 725 and IEC 60664-1 creepage/clearance requirements, blocking substation Ground Potential Rise (GPR) and earth ground loops.
+- **Inline Fuse Sizing (1.5 A, TCS-PCB1):** An off board 3–5 A DC master toggle switch and 1.5 A inline fuse sit in the enclosure harness between the V75 and PCB, keeping primary protection off the PCB per TCS-PCB1:
+  - I_fuse = 1.5 A × 0.75 = 1.125 A
+  - Satisfies I_peak (0.50 A) < I_fuse,derated (1.125 A) < I_V75,max (2.0 A) providing > 2× room above peak LTE bursts to prevent trips while below the V75's 2.0 A port limit.
+- **TVS Diode Selection & Clamping (SMBJ6.0A, IEEE Std C62.41):** A 5.0 V TVS (SMBJ5.0A) sits too close to the V75's nominal 5.0–5.2 V bus and risks reverse-leakage current that wastes battery energy. Selecting the SMBJ6.0A (600 W peak rating) satisfies the protection window:
+  - Vmax (5.2 V) < V (6.0 V) < Vmin (6.67 V) 
+  - V_C = 10.3 V (at I = 58.3 A, 10/1000 µs surge) < Vmax of downstream regulators (20 V on LT3042), clamping transients before they damage electronics.
+- **Energy Storage Safety (SR-06, NEC Art. 706):** Using the Voltaic V75 pre-certified UL 2056, UL 1642, IEC 62133, and UN 38.3 cell and BMS protections (overcharge, over-discharge, short-circuit, and thermal cutoff), eliminating custom lithium-pack thermal runaway risk.
+
+---
+
+### 5. Solar Harvest, Autonomy Math, and Winter Tradeoffs (`SR-04`, `TCS-PS1`, `TCS-WS2`)
+
+#### Solar Panel Harvest Math (Voltaic P106-S, 6 W)
+Daily harvested energy is modeled as E_solar = P_panel × PSH × η_sys, using P_panel = 6 W, conservative charging/MPPT efficiency η_sys = 0.65, and Cookeville, TN Peak Sun Hours (PSH):
+- **Spring–Fall (4.5 PSH):** E_solar = 6 W × 4.5 h × 0.65 = 17.55 Wh/day
+- **Clear Winter (2.5 PSH, > 0 °C):** E_solar = 6 W × 2.5 h × 0.65 = 9.75 Wh/day
+- **Heavy Overcast (0.4 PSH):** E_solar = 6 W × 0.4 h × 0.65 = 1.56 Wh/day
+
+#### Case A vs. Case B Daily Energy and Runtime Math
+Using the Voltaic V75 usable capacity E_batt = 72.36 Wh × 0.85 = 61.5 Wh and daily demand E_day = Σ(P_i × t_i):
+- **Case A (Continuous 24/7):** 24 h active base (0.3423 W) + 0.4 h LTE(1.5 W):
+  - E_day = (0.3423 W × 24 h) + (1.5 W × 0.4 h) = 8.22 + 0.60 = 8.82 Wh/day
+  - **Zero Solar Runtime:** T_batt = 61.5 Wh / 8.82 Wh/day = 7.0 days
+  - **Winter Tradeoff:** Achieves indefinite spring–fall operation (+8.73 Wh/day surplus), but drops to a +0.93 Wh/day clear-winter surplus. A 5-day sub-0 °C freeze drains 5 × 8.82 = 44.1 Wh (71.7% of usable pack) and requires 44.1 / 0.93 = 47.4 clear winter days to recover making Case A unreliable for year-round 90-day unattended operation on a 6 W panel.
+- **Case B (Duty-Cycled 10%):** 2.4 h active base (0.3423 W) + 21.4 h sleep base (0.0075 W) + 0.2 h LTE (1.5 W):
+  - E_day = (0.3423 W × 2.4 h) + (0.0075 W × 21.4 h) + (1.5 W × 0.2 h) = 0.822 + 0.160 + 0.300 = 1.28 Wh/day
+  - **Zero Solar Runtime:** T_batt,B = 61.5 Wh / 1.28 Wh/day = 48.0 days
+  - **Winter Tradeoff:** Maintains a surplus even under heavy overcast skies (+0.28 Wh/day), loses only 5 × 1.28 = 6.4 Wh (10.4% of pack) across a 5-day freeze, and recovers in 6.4 / 8.47 = 0.8 clear winter days, satisfying the 90-day autonomy target (SR-04 / TCS-PS1).
+
+#### Cold-Weather BMS Boundary and UI Power Budget
+- **Sub-0 °C / Sub--15 °C Limits (TCS-WS2):** The V75 BMS blocks charging below 0 °C and halts discharge below -15 °C. While Cookeville rarely reaches -15 °C, the customer's extreme temperature spec extends to -30 °C. Documenting this identifies extreme sub -15 °C operation as a known commercial-pack limitation.
+- **Battery Monitoring & Status LEDs:** Because the V75 outputs a boost-regulated 5.0 V rail, the 100 kΩ / 100 kΩ divider (25 µA continuous draw) functions primarily as a brownout / cutoff detector (< 4.5 V) rather than state of charge. Driving the status LEDs from nRF9151 GPIOs on GND via a momentary press-to-test button.
+
+---
+
+### 6. Requirements Verification Summary
+
+| Requirement / Spec | Target Metric | Analytical Result | Status |
+| :--- | :--- | :--- | :---: |
+| **SR-01 (Regulation)** | ±2% DC tolerance | ±1.1% (LT3042 + 0.1% RSET) | **Pass** |
+| **SR-02 / TCS-PS4 (Noise)** | < 10 µV p-p ripple / < 10 µV RMS | 8.89 µV p-p ripple; 0.80 µV RMS noise | **Pass** |
+| **SR-03 (Isolation)** | ≥ 2 kV galvanic barrier | 3 kV DC-DC + ≥ 2.5 kV SPI iso + 6.3–8.0 mm moat | **Pass** |
+| **SR-04 / TCS-PS1 (Autonomy)** | ≥ 90 days unattended | Indefinite (90+ days) in Case B; 48 days zero-solar | **Pass (Case B)** |
+| **SR-05 (Transients)** | < 5% (250 mV) sag on load steps | 128 mV (2.56%) sag with 47 µF bulk cap | **Pass** |
+| **SR-06 / TCS-PS2 (Safety/Surge)** | UL 2056/1642, NEC, IEEE C62.41 | Certified V75 + 1.5 A fuse + SMBJ6.0A (V_C = 10.3 V) | **Pass** |
+| **TCS-WS2 (Thermal)** | -30 °C to +41 °C | PCB T_J ≤ 52.5 °C at 50 °C box; V75 cuts off at -15 °C | **Conditional*** |
